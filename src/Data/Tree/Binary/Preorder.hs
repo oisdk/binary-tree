@@ -29,7 +29,7 @@ module Data.Tree.Binary.Preorder
   , foldTree
   , zygoTree
    -- * Display
-  , drawBinaryTree
+  , drawTree
   ) where
 
 import Prelude hiding (
@@ -55,6 +55,7 @@ import Data.Foldable (Foldable(foldl, foldr, foldMap))
 
 #if MIN_VERSION_base(4,9,0)
 import Data.Functor.Classes
+import qualified Data.Semigroup as Semigroup
 #endif
 
 import Data.Traversable (Traversable(..))
@@ -67,7 +68,9 @@ import GHC.Generics (Generic, Generic1)
 import GHC.Generics (Generic)
 #endif
 
-import Data.Functor.Identity
+#if MIN_VERSION_base(4,8,0)
+import Data.Functor.Identity (Identity(..))
+#endif
 
 #if __GLASGOW_HASKELL__
 import Data.Data (Data)
@@ -86,7 +89,14 @@ data Tree a
   | Node a
          (Tree a)
          (Tree a)
-  deriving (Show, Read, Eq, Ord, Typeable, Generic, Generic1, Data)
+  deriving (Show, Read, Eq, Ord
+#if __GLASGOW_HASKELL__
+  , Typeable, Data
+#endif 
+#if __GLASGOW_HASKELL__ >= 702
+  , Generic, Generic1
+#endif
+  )
 
 instance Functor Tree where
   fmap _ Leaf = Leaf
@@ -248,7 +258,7 @@ unfoldTree f = go
 
 -- | @'replicate' n a@ creates a tree of size @n@ filled @a@.
 --
--- >>> putStr (drawBinaryTree (replicate 4 ()))
+-- >>> putStr (drawTree (replicate 4 ()))
 --     ()
 --   ()  ()
 -- ()
@@ -277,14 +287,23 @@ replicateA n x = go n
 {-# SPECIALISE replicateA :: Int -> Identity a -> Identity (Tree a) #-}
 {-# SPECIALISE replicateA :: Int -> State s a -> State s (Tree a) #-}
 
+#if MIN_VERSION_base(4,9,0)
+instance Semigroup.Semigroup (Tree a) where
+  Leaf <> y = y
+  Node x l r <> y = Node x l (r Semigroup.<> y)
+#if __GLASGOW_HASKELL__
+  {-# INLINABLE (<>) #-}
+#endif
+#endif
+
 -- | This instance is necessarily inefficient, to obey the monoid laws.
 --
--- >>> putStr (drawBinaryTree (fromList [1..6]))
+-- >>> putStr (drawTree (fromList [1..6]))
 --    1
 --  2   5
 -- 3 4 6
 --
--- >>> putStr (drawBinaryTree (fromList [1..6] `mappend` singleton 7))
+-- >>> putStr (drawTree (fromList [1..6] `mappend` singleton 7))
 --    1
 --  2   5
 -- 3 4 6 7
@@ -293,8 +312,14 @@ replicateA n x = go n
 --
 -- prop> toList (mappend xs (ys :: Tree Int)) === mappend (toList xs) (toList ys)
 instance Monoid (Tree a) where
+#if MIN_VERSION_base(4,9,0)
+  mappend = (Semigroup.<>)
+  {-# INLINE mappend #-}
+#else
   mappend Leaf y = y
   mappend (Node x l r) y = Node x l (mappend r y)
+  {-# INLINABLE mappend #-}
+#endif
   mempty = Leaf
 
 -- | Construct a tree from a list, in an preorder fashion.
@@ -313,12 +338,12 @@ fromList xs = evalState (replicateA n u) xs
 
 -- | Pretty-print a tree.
 --
--- >>> putStr (drawBinaryTree (fromList [1..7]))
+-- >>> putStr (drawTree (fromList [1..7]))
 --    1
 --  2   5
 -- 3 4 6 7
-drawBinaryTree :: Show a => Tree a -> String
-drawBinaryTree = Internal.drawBinaryTree foldTree
+drawTree :: Show a => Tree a -> String
+drawTree = Internal.drawBinaryTree foldTree
 
 newtype State s a = State
   { runState :: s -> (a, s)
