@@ -32,10 +32,33 @@ module Data.Tree.Binary.Preorder
   , drawBinaryTree
   ) where
 
-import Control.DeepSeq (NFData(..))
-import Data.Data (Data)
+import Prelude hiding (
+  Functor(..)
+  ,replicate
+#if MIN_VERSION_base(4,8,0)
+  ,Applicative, (<$>), foldMap, Monoid
+#endif
+  )
+
+import Control.Applicative (Applicative(..), liftA3)
+
+import Control.DeepSeq (NFData(rnf))
+
+import Data.Monoid (Monoid(..))
+import Data.Functor (Functor(..))
+
+#if MIN_VERSION_base(4,6,0)
+import Data.Foldable (Foldable(foldl, foldr, foldMap, foldl', foldr'))
+#else
+import Data.Foldable (Foldable(foldl, foldr, foldMap))
+#endif
+
+#if MIN_VERSION_base(4,9,0)
 import Data.Functor.Classes
-import Data.Monoid
+#endif
+
+import Data.Traversable (Traversable(..))
+
 import Data.Typeable (Typeable)
 
 #if __GLASGOW_HASKELL__ >= 706
@@ -44,28 +67,17 @@ import GHC.Generics (Generic, Generic1)
 import GHC.Generics (Generic)
 #endif
 
-import Control.Applicative (Applicative(..), liftA3)
 import Data.Functor.Identity
 
 #if __GLASGOW_HASKELL__
+import Data.Data (Data)
 import Text.Read
 import Text.Read.Lex
 #endif
 
 import qualified Data.Tree.Binary.Internal as Internal
 
-import Prelude hiding (
-  replicate
-#if MIN_VERSION_base(4,8,0)
-  ,Applicative, (<$>), foldMap, Monoid
-#endif
-  )
 
-#if MIN_VERSION_base(4,6,0)
-import Data.Foldable (Foldable(foldl, foldr, foldMap, foldl', foldr'))
-#else
-import Data.Foldable (Foldable(foldl, foldr, foldMap))
-#endif
   
 
 -- | A simple binary tree.
@@ -144,7 +156,7 @@ instance Eq1 Tree where
 instance Ord1 Tree where
   liftCompare _ Leaf Leaf = EQ
   liftCompare cmp (Node x xl xr) (Node y yl yr) =
-    cmp x y <> liftCompare cmp xl yl <> liftCompare cmp xr yr
+    cmp x y `mappend` liftCompare cmp xl yl `mappend` liftCompare cmp xr yr
   liftCompare _ Leaf _ = LT
   liftCompare _ _ Leaf = GT
 
