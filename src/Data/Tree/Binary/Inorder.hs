@@ -12,7 +12,19 @@
 #endif
 
 
--- | A simple, generic, inorder binary tree and some operations.
+-- | 
+-- Module      : Data.Tree.Binary.Inorder
+-- Description : A simple, generic, inorder binary tree.
+-- Copyright   : (c) Donnacha Oisín Kidney, 2018
+-- License     : MIT
+-- Maintainer  : mail@doisinkidney.com
+-- Stability   : experimental
+-- Portability : portable
+--
+-- This module provides a simple inorder binary tree, as is needed
+-- in several application. Instances, if sensible, are defined,
+-- and generally effort is made to keep the implementation as
+-- generic as possible.
 
 module Data.Tree.Binary.Inorder
   ( -- * The tree type
@@ -77,7 +89,7 @@ import qualified Text.Read.Lex as Lex
 import qualified Data.Tree.Binary.Internal as Internal
 import Data.Tree.Binary.Internal (State(..), evalState, Identity(..))
 
--- | A simple binary tree.
+-- | An inorder binary tree.
 data Tree a
   = Leaf
   | Node (Tree a)
@@ -185,7 +197,7 @@ instance Read1 Tree where
           (expect' (Ident "Node") *> liftA3 Node (step go) (step rp) (step go))
       expect' = lift . Lex.expect
   liftReadListPrec = liftReadListPrecDefault
-#endif
+#else
   liftReadsPrec rp _ = go
     where
       go p st =
@@ -200,6 +212,7 @@ instance Read1 Tree where
              , (r, zs) <- go 11 ys
              ])
           st
+#endif
 #endif
 
 -- | Fold over a tree.
@@ -285,7 +298,7 @@ instance Monoid (Tree a) where
 #endif
   mempty = Leaf
 
--- | Construct a tree from a list, in an preorder fashion.
+-- | Construct a tree from a list, in an inorder fashion.
 --
 -- prop> toList (fromList xs) === xs
 fromList :: [a] -> Tree a
@@ -305,7 +318,7 @@ fromList xs = evalState (replicateA n u) xs
                "Data.Tree.Binary.Inorder.fromList: bug!"
              z:zs -> (z, zs))
 
--- | Pretty-print a tree.
+-- | Convert a tree to a human-readable structural representation.
 --
 -- >>> putStr (drawTree (fromList [1..7]))
 --    4
