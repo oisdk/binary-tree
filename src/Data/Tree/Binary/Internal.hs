@@ -1,22 +1,29 @@
 module Data.Tree.Binary.Internal where
 
-data StringBuilder = SB { size :: {-# UNPACK #-} !Int, levels :: [String -> String] }
+import Prelude hiding (unlines)
 
-drawBinaryTree :: Show a => (StringBuilder -> (a -> StringBuilder -> StringBuilder -> StringBuilder) -> b -> StringBuilder) -> b -> String
-drawBinaryTree ft = unlines' . levels . ft (SB 0 []) f
+data LevelBuilder = LevelBuilder
+  { offset :: {-# UNPACK #-} !Int
+  , levels :: [String -> String]
+  }
+
+drawBinaryTree ::
+     Show a
+  => (LevelBuilder -> (a -> LevelBuilder -> LevelBuilder -> LevelBuilder) -> b -> LevelBuilder)
+  -> b
+  -> String
+drawBinaryTree ft = unlines . levels . ft (LevelBuilder 0 []) f
   where
-    f el (SB llen lb) (SB rlen rb) = SB
-        ( llen + rlen + xlen)
-        ( pad llen . (xshw ++) . pad rlen :
-          zipLongest llen rlen join' lb rb)
+    f el (LevelBuilder llen lb) (LevelBuilder rlen rb) =
+      LevelBuilder
+        (llen + rlen + xlen)
+        (pad llen . (xshw ++) . pad rlen : zipLongest lb rb)
       where
         xshw = show el
         xlen = length xshw
-        join' x y = x . pad xlen . y
+        zipLongest (x:xs) (y:ys) = x . pad xlen . y : zipLongest xs ys
+        zipLongest [] ys = map (\y -> pad (llen+xlen) . y) ys
+        zipLongest xs [] = map (\x -> x . pad (xlen+rlen)) xs
     pad = flip (foldr (:)) . flip replicate ' '
-    unlines' = foldr (\e a -> e ('\n' : a)) ""
-    zipLongest ldef rdef fn = go
-      where
-        go (x:xs) (y:ys) = fn x y : go xs ys
-        go [] ys         = map (fn (pad ldef)) ys
-        go xs []         = map (`fn` (pad rdef)) xs
+    unlines [] = ""
+    unlines (x:xs) = x (foldr (\e a -> '\n' : e a) "" xs)
