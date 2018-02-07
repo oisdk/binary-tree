@@ -68,10 +68,6 @@ import GHC.Generics (Generic, Generic1)
 import GHC.Generics (Generic)
 #endif
 
-#if MIN_VERSION_base(4,8,0)
-import Data.Functor.Identity (Identity(..))
-#endif
-
 import Text.Read
 
 #if __GLASGOW_HASKELL__
@@ -80,17 +76,7 @@ import qualified Text.Read.Lex as Lex
 #endif
 
 import qualified Data.Tree.Binary.Internal as Internal
-
-#if !MIN_VERSION_base(4,8,0)
-newtype Identity a = Identity {runIdentity :: a}
-
-instance Functor Identity where
-  fmap f (Identity x) = Identity (f x)
-
-instance Applicative Identity where
-  pure = Identity
-  Identity f <*> Identity x = Identity (f x)
-#endif
+import Data.Tree.Binary.Internal (State(..), evalState, Identity(..))
 
 -- | A simple binary tree.
 data Tree a
@@ -388,29 +374,6 @@ drawTree = Internal.drawBinaryTree foldTree
 printTree :: Show a => Tree a -> IO ()
 printTree = putStrLn . drawTree
 
-newtype State s a = State
-  { runState :: s -> (a, s)
-  }
-
-instance Functor (State s) where
-  fmap f xs =
-    State
-      (\s ->
-         case runState xs s of
-           (x, s') -> (f x, s'))
-
-instance Applicative (State s) where
-  pure x = State (\s -> (x, s))
-  fs <*> xs =
-    State
-      (\s ->
-         case runState fs s of
-           (f, s') ->
-             case runState xs s' of
-               (x, s'') -> (f x, s''))
-
-evalState :: State s a -> s -> a
-evalState xs s = fst (runState xs s)
 -- $setup
 -- >>> import Test.QuickCheck
 -- >>> import Data.Foldable

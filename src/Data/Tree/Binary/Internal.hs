@@ -1,9 +1,21 @@
-module Data.Tree.Binary.Internal where
+{-# LANGUAGE CPP #-}
+
+module Data.Tree.Binary.Internal
+  ( drawBinaryTree
+  , Identity(..)
+  , State(..)
+  , evalState
+  ) where
 
 import Prelude hiding (unlines)
 
+#if MIN_VERSION_base(4,8,0)
+import Data.Functor.Identity (Identity(..))
+#endif
+
+
 data LevelBuilder = LevelBuilder
-  { offset :: {-# UNPACK #-} !Int
+  { _offset :: {-# UNPACK #-} !Int
   , levels :: [Level]
   }
 
@@ -70,3 +82,38 @@ drawBinaryTree ft = unlines . levels . ft (LevelBuilder 0 []) f
         comb3 (Prefix x xs) l ys = Prefix x (comb3 xs l ys)
     unlines [] = ""
     unlines (x:xs) = runLevel x (foldr (\e a -> '\n' : runLevel e a) "" xs)
+
+newtype State s a = State
+  { runState :: s -> (a, s)
+  }
+
+instance Functor (State s) where
+  fmap f xs =
+    State
+      (\s ->
+         case runState xs s of
+           (x, s') -> (f x, s'))
+
+instance Applicative (State s) where
+  pure x = State (\s -> (x, s))
+  fs <*> xs =
+    State
+      (\s ->
+         case runState fs s of
+           (f, s') ->
+             case runState xs s' of
+               (x, s'') -> (f x, s''))
+
+evalState :: State s a -> s -> a
+evalState xs s = fst (runState xs s)
+
+#if !MIN_VERSION_base(4,8,0)
+newtype Identity a = Identity {runIdentity :: a}
+
+instance Functor Identity where
+  fmap f (Identity x) = Identity (f x)
+
+instance Applicative Identity where
+  pure = Identity
+  Identity f <*> Identity x = Identity (f x)
+#endif

@@ -5,6 +5,7 @@ import Test.QuickCheck.Checkers
 import Test.QuickCheck.Classes
 
 import qualified Data.Tree.Binary.Preorder as Preorder
+import qualified Data.Tree.Binary.Inorder as Inorder
 
 import Control.Applicative
 import Data.Foldable
@@ -32,6 +33,27 @@ instance (Show a, Eq a) => EqProp (Preorder.Tree a) where
   x =-= y =
     whenFail
       (putStrLn (Preorder.drawTree x ++ "\n/=\n" ++ Preorder.drawTree y))
+      (x == y)
+
+instance Arbitrary a => Arbitrary (Inorder.Tree a) where
+  arbitrary = sized go
+    where
+      go 0 = pure Inorder.Leaf
+      go n
+        | n <= 0 = pure Inorder.Leaf
+        | otherwise =
+          oneof [pure Inorder.Leaf, liftA3 Inorder.Node sub arbitrary sub]
+        where
+          sub = go (n `div` 2)
+  shrink Inorder.Leaf = []
+  shrink (Inorder.Node l x r) =
+    Inorder.Leaf :
+    l : r : [Inorder.Node l' x' r' | (l', x', r') <- shrink (l, x, r)]
+
+instance (Show a, Eq a) => EqProp (Inorder.Tree a) where
+  x =-= y =
+    whenFail
+      (putStrLn (Inorder.drawTree x ++ "\n/=\n" ++ Inorder.drawTree y))
       (x == y)
 
 newtype Lifted f a = Lifted { runLifted :: f a }
@@ -84,4 +106,9 @@ main = do
   quickBatch (ord (\x -> oneof [pure x, arbitrary :: Gen (Lifted Preorder.Tree OrdA)]))
   quickCheck (eq1Prop (arbitrary :: Gen (Preorder.Tree A)) shrink)
   quickCheck (ord1Prop (arbitrary :: Gen (Preorder.Tree OrdA)) shrink)
+  quickBatch (monoid (Inorder.Leaf :: Inorder.Tree A))
+  quickCheck (inverseL toList (Inorder.fromList :: [Int] -> Inorder.Tree Int))
+  quickBatch (ord (\x -> oneof [pure x, arbitrary :: Gen (Lifted Inorder.Tree OrdA)]))
+  quickCheck (eq1Prop (arbitrary :: Gen (Inorder.Tree A)) shrink)
+  quickCheck (ord1Prop (arbitrary :: Gen (Inorder.Tree OrdA)) shrink)
   doctest ["-isrc", "src/"]
