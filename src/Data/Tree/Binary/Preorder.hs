@@ -13,7 +13,6 @@
 
 
 -- | A simple, generic, preorder binary tree and some operations.
---
 
 module Data.Tree.Binary.Preorder
   ( -- * The tree type
@@ -80,6 +79,17 @@ import qualified Text.Read.Lex as Lex
 #endif
 
 import qualified Data.Tree.Binary.Internal as Internal
+
+#if !MIN_VERSION_base(4,8,0)
+newtype Identity a = Identity {runIdentity :: a}
+
+instance Functor Identity where
+  fmap f (Identity x) = Identity (f x)
+
+instance Applicative Identity where
+  pure = Identity
+  Identity f <*> Identity x = Identity (f x)
+#endif
 
 -- | A simple binary tree.
 data Tree a
@@ -333,7 +343,9 @@ instance Monoid (Tree a) where
 #else
   mappend Leaf y = y
   mappend (Node x l r) y = Node x l (mappend r y)
+#if __GLASGOW_HASKELL__
   {-# INLINABLE mappend #-}
+#endif
 #endif
   mempty = Leaf
 
@@ -348,7 +360,13 @@ fromList xs = evalState (replicateA n u) xs
       State
         (\ys ->
            case ys of
-             [] -> errorWithoutStackTrace "Data.Tree.Binary.Preorder.fromList: bug!"
+             [] -> 
+#if __GLASGOW_HASKELL__ >= 800
+               errorWithoutStackTrace
+#else
+               error
+#endif
+               "Data.Tree.Binary.Preorder.fromList: bug!"
              z:zs -> (z, zs))
 
 -- | Pretty-print a tree.
