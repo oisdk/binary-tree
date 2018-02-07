@@ -41,3 +41,4 @@ tests:
     - binary-tree
     - QuickCheck
     - doctest
+    - checkers

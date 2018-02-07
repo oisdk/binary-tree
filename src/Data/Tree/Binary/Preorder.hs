@@ -412,7 +412,6 @@ instance Applicative (State s) where
 evalState :: State s a -> s -> a
 evalState xs s = fst (runState xs s)
 -- $setup
--- >>> :set -XDeriveFunctor
 -- >>> import Test.QuickCheck
 -- >>> import Data.Foldable
 -- >>> :{

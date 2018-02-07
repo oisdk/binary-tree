@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: a9946078c63714071360ea8295db542be0e69b715982c2840d238a5c7e2abff1
+-- hash: bb9c9fda4d064d3c0e83f9ff0761686d84e09f6c6b80dc0e7c4cbfedd9622817
 
 name:           binary-tree
 version:        0.1.0.0
@@ -49,6 +49,7 @@ test-suite binary-tree-test
       QuickCheck
     , base >=4.7 && <5
     , binary-tree
+    , checkers
     , doctest
   other-modules:
       Paths_binary_tree
