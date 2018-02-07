@@ -38,6 +38,8 @@ module Data.Tree.Binary.Inorder
   , fromList
    -- * Consumption
   , foldTree
+   -- * Querying
+  , depth
    -- * Display
   , drawTree
   , printTree
@@ -223,6 +225,16 @@ foldTree b f = go
   where
     go Leaf = b
     go (Node l x r) = f (go l) x (go r)
+
+-- | The depth of the tree.
+-- 
+-- >>> depth empty
+-- 0
+--
+-- >>> depth (singleton ())
+-- 1
+depth :: Tree a -> Int
+depth = foldTree 0 (\l _ r -> succ (max l r))
 
 -- | Unfold a tree from a seed.
 unfoldTree :: (b -> Maybe (b, a, b)) -> b -> Tree a
