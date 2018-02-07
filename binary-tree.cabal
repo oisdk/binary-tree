@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: b3e41f41f8f815cb0633c8f19028a81a8e912706341a070b81967470f43914ba
+-- hash: 39e6937611a65c864c6e470425a5e947f22ca1dba890d09a3a4c309ed3ba81ea
 
 name:           binary-tree
 version:        0.1.0.0
@@ -30,7 +30,7 @@ library
       src
   ghc-options: -Wall
   build-depends:
-      base >=4.7 && <5
+      base >=4.0 && <5
     , deepseq
   exposed-modules:
       Data.Tree.Binary.Inorder
@@ -47,8 +47,9 @@ test-suite binary-tree-test
       test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      QuickCheck
-    , base >=4.7 && <5
+      ChasingBottoms
+    , QuickCheck
+    , base >=4.0 && <5
     , binary-tree
     , checkers
     , doctest

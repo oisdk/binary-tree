@@ -3,12 +3,16 @@ import Test.QuickCheck
 import Test.QuickCheck.Poly
 import Test.QuickCheck.Checkers
 import Test.QuickCheck.Classes
+import Test.QuickCheck.Function
+import Test.ChasingBottoms
 
 import qualified Data.Tree.Binary.Preorder as Preorder
 import qualified Data.Tree.Binary.Inorder as Inorder
+import Data.Tree.Binary.Internal
 
 import Control.Applicative
 import Data.Foldable
+import Data.Traversable
 
 import Data.Functor.Classes
 
@@ -99,6 +103,85 @@ ord1Prop arb shrnk =
     forAllShrink (oneof [pure xs, arb]) shrnk $ \ys ->
       liftCompare compare xs ys === (compare xs ys)
 
+foldlProp ::
+     (Foldable f)
+  => f ()
+  -> f A
+  -> Fun (B, A) B
+  -> B
+  -> Property
+foldlProp _ xs f b =
+  foldl (applyFun2 f) b (toList xs) === foldl (applyFun2 f) b xs
+
+foldrProp' ::
+     (Foldable f)
+  => f ()
+  -> f A
+  -> Fun (A, B) B
+  -> B
+  -> Property
+foldrProp' _ xs f b = foldr' (applyFun2 f) b xs === foldr (applyFun2 f) b xs
+
+foldlProp' ::
+     (Foldable f)
+  => f ()
+  -> f A
+  -> Fun (B, A) B
+  -> B
+  -> Property
+foldlProp' _ xs f b =
+  foldl' (applyFun2 f) b xs === foldl (applyFun2 f) b xs
+
+foldMapProp :: Foldable f => f () -> f A -> Fun A [B] -> Property
+foldMapProp _ xs f =
+  foldMap (applyFun f) (toList xs) === foldMap (applyFun f) xs
+
+indexed :: Traversable f => f a -> (Int, f Int)
+indexed = mapAccumL (\a _ -> (a+1, a)) 0
+
+foldrStrictProp :: (Show (f Int), Traversable f) => f () -> f () -> Property
+foldrStrictProp _ xs' =
+  conjoin
+    [ counterexample (unlines [show xs, show ys, show i]) $
+    isBottom (foldr' c b xs) === isBottom (foldr' c b ys)
+    | b
+    -- error "too strict",
+         <-
+        [0]
+    , (i, c) <- zip [-1 ..] fns
+    ]
+  where
+    (n, xs) = indexed xs'
+    ys = [0 .. n - 1]
+    fns =
+      const :
+      [ \y b ->
+        if x == y
+          then error "too strict"
+          else y
+      | x <- ys
+      ]
+
+foldlStrictProp :: (Show (f Int), Traversable f) => f () -> f () -> Property
+foldlStrictProp _ xs' =
+  conjoin
+    [ counterexample (unlines [show xs, show ys, show i]) $
+    isBottom (foldl' c b xs) == isBottom (foldl' c b ys)
+    | b <- [error "too strict", 0]
+    , (i, c) <- zip [-1 ..] fns
+    ]
+  where
+    (n, xs) = indexed xs'
+    ys = [0 .. n - 1]
+    fns =
+      const id :
+      [ \b y ->
+        if x == y
+          then error "too strict"
+          else y
+      | x <- ys
+      ]
+
 main :: IO ()
 main = do
   quickBatch (monoid (Preorder.Leaf :: Preorder.Tree A))
@@ -111,4 +194,14 @@ main = do
   quickBatch (ord (\x -> oneof [pure x, arbitrary :: Gen (Lifted Inorder.Tree OrdA)]))
   quickCheck (eq1Prop (arbitrary :: Gen (Inorder.Tree A)) shrink)
   quickCheck (ord1Prop (arbitrary :: Gen (Inorder.Tree OrdA)) shrink)
+  quickCheck (foldlProp Inorder.Leaf)
+  quickCheck (foldlProp Preorder.Leaf)
+  quickCheck (foldrProp' Preorder.Leaf)
+  quickCheck (foldrProp' Inorder.Leaf)
+  quickCheck (foldMapProp Preorder.Leaf)
+  quickCheck (foldMapProp Inorder.Leaf)
+  quickCheck (foldrStrictProp Preorder.Leaf)
+  quickCheck (foldrStrictProp Inorder.Leaf)
+  quickCheck (foldlStrictProp Preorder.Leaf)
+  quickCheck (foldlStrictProp Inorder.Leaf)
   doctest ["-isrc", "src/"]
