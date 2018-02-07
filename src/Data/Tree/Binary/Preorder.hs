@@ -12,7 +12,19 @@
 #endif
 
 
--- | A simple, generic, preorder binary tree and some operations.
+-- | 
+-- Module      : Data.Tree.Binary.Preorder
+-- Description : A simple, generic, preorder binary tree.
+-- Copyright   : (c) Donnacha Oisín Kidney, 2018
+-- License     : MIT
+-- Maintainer  : mail@doisinkidney.com
+-- Stability   : experimental
+-- Portability : portable
+--
+-- This module provides a simple preorder binary tree, as is needed
+-- in several application. Instances, if sensible, are defined,
+-- and generally effort is made to keep the implementation as
+-- generic as possible.
 
 module Data.Tree.Binary.Preorder
   ( -- * The tree type
@@ -26,7 +38,6 @@ module Data.Tree.Binary.Preorder
   , fromList
    -- * Consumption
   , foldTree
-  , zygoTree
    -- * Display
   , drawTree
   , printTree
@@ -78,7 +89,7 @@ import qualified Text.Read.Lex as Lex
 import qualified Data.Tree.Binary.Internal as Internal
 import Data.Tree.Binary.Internal (State(..), evalState, Identity(..))
 
--- | A simple binary tree.
+-- | A preorder binary tree.
 data Tree a
   = Leaf
   | Node a
@@ -186,7 +197,7 @@ instance Read1 Tree where
           (expect' (Ident "Node") *> liftA3 Node (step rp) (step go) (step go))
       expect' = lift . Lex.expect
   liftReadListPrec = liftReadListPrecDefault
-#endif
+#else
   liftReadsPrec rp _ = go
     where
       go p st =
@@ -202,6 +213,7 @@ instance Read1 Tree where
              ])
           st
 #endif
+#endif
 
 -- | Fold over a tree.
 --
@@ -211,56 +223,6 @@ foldTree b f = go
   where
     go Leaf = b
     go (Node x l r) = f x (go l) (go r)
-
--- | A zygomorphism over a tree. Used if you want perform two folds
--- over a tree in one pass.
---
--- As an example, checking if a tree is balanced can be performed like
--- this using explicit recursion:
---
--- @
--- isBalanced :: 'Tree' a -> Bool
--- isBalanced 'Leaf' = True
--- isBalanced ('Node' _ l r)
---   = 'length' l == 'length' r && isBalanced l && isBalanced r
--- @
---
--- However, this algorithm performs several extra passes over the
--- tree. A more efficient version is much harder to read, however:
---
--- @
--- isBalanced :: Tree a -> Bool
--- isBalanced = snd . go where
---   go 'Leaf' = (0 :: Int,True)
---   go ('Node' _ l r) =
---       let (llen,lbal) = go l
---           (rlen,rbal) = go r
---       in (llen + rlen + 1, llen == rlen && lbal && rbal)
--- @
---
--- This same algorithm (the one pass version) can be expressed as a
--- zygomorphism:
---
--- @
--- isBalanced :: 'Tree' a -> Bool
--- isBalanced =
---     'zygoTree'
---         (0 :: Int)
---         (\\_ x y -> 1 + x + y)
---         True
---         go
---   where
---     go _ llen lbal rlen rbal = llen == rlen && lbal && rbal
--- @
-zygoTree ::
-     p -> (a -> p -> p -> p) -> b -> (a -> p -> b -> p -> b -> b) -> Tree a -> b
-zygoTree p f1 b f = snd . go
-  where
-    go Leaf = (p, b)
-    go (Node x l r) =
-      let (lr1, lr) = go l
-          (rr1, rr) = go r
-      in (f1 x lr1 rr1, f x lr1 lr rr1 rr)
 
 -- | Unfold a tree from a seed.
 unfoldTree :: (b -> Maybe (a, b, b)) -> b -> Tree a
@@ -356,7 +318,7 @@ fromList xs = evalState (replicateA n u) xs
                "Data.Tree.Binary.Preorder.fromList: bug!"
              z:zs -> (z, zs))
 
--- | Pretty-print a tree.
+-- | Convert a tree to a human-readable structural representation.
 --
 -- >>> putStr (drawTree (fromList [1..7]))
 --    1
