@@ -72,16 +72,14 @@ import GHC.Generics (Generic)
 import Data.Functor.Identity (Identity(..))
 #endif
 
+import Text.Read
+
 #if __GLASGOW_HASKELL__
 import Data.Data (Data)
-import Text.Read
-import Text.Read.Lex
+import qualified Text.Read.Lex as Lex
 #endif
 
 import qualified Data.Tree.Binary.Internal as Internal
-
-
-  
 
 -- | A simple binary tree.
 data Tree a
@@ -180,6 +178,7 @@ instance Show1 Tree where
         s 11 x . showChar ' ' . go 11 l . showChar ' ' . go 11 r
 
 instance Read1 Tree where
+#if __GLASGOW_HASKELL__
   liftReadPrec rp _ = go
     where
       go =
@@ -188,7 +187,23 @@ instance Read1 Tree where
         prec
           10
           (expect' (Ident "Node") *> liftA3 Node (step rp) (step go) (step go))
-      expect' = lift . expect
+      expect' = lift . Lex.expect
+  liftReadListPrec = liftReadListPrecDefault
+#endif
+  liftReadsPrec rp _ = go
+    where
+      go p st =
+        [(Leaf, xs) | ("Leaf", xs) <- lex st] ++
+        readParen
+          (p > 10)
+          (\vs ->
+             [ (Node x l r, zs)
+             | ("Node", ws) <- lex vs
+             , (x, xs) <- rp 11 ws
+             , (l, ys) <- go 11 xs
+             , (r, zs) <- go 11 ys
+             ])
+          st
 #endif
 
 -- | Fold over a tree.
