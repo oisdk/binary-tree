@@ -5,7 +5,7 @@
 {-# LANGUAGE DeriveTraversable  #-}
 {-# LANGUAGE Safe               #-}
 
--- | A simple, generic binary tree and some operations.
+-- | A simple, generic, preorder binary tree and some operations.
 module Data.Tree.Binary.Preorder
   (
    -- * The tree type
@@ -42,7 +42,7 @@ import           Text.Read
 import           Text.Read.Lex
 
 import           Prelude               hiding (replicate)
-
+import qualified Data.Tree.Binary.Internal as Internal
 -- | A simple binary tree.
 data Tree a
     = Leaf
@@ -227,7 +227,7 @@ fromList :: [a] -> Tree a
 fromList xs = evalState (replicateA n u) xs
   where
     n = length xs
-    u = State (fromMaybe (error "Data.Tree.Binary.fromList: bug!") . uncons)
+    u = State (fromMaybe (error "Data.Tree.Binary.Preorder.fromList: bug!") . uncons)
 
 -- | Pretty-print a tree.
 --
@@ -236,25 +236,7 @@ fromList xs = evalState (replicateA n u) xs
 --  2   5
 -- 3 4 6 7
 drawBinaryTree :: Show a => Tree a -> String
-drawBinaryTree = foldr (. (:) '\n') "" . snd . foldTree (0, []) f
-  where
-    f el (llen,lb) (rlen,rb) =
-        ( llen + rlen + xlen
-        , pad llen . (xshw ++) . pad rlen :
-          zipLongest (pad llen) (pad rlen) join' lb rb)
-      where
-        xshw = show el
-        xlen = length xshw
-        join' x y = x . pad xlen . y
-    pad 0 = id
-    pad n = (' ' :) . pad (n - 1)
-
-zipLongest :: a -> b -> (a -> b -> c) -> [a] -> [b] -> [c]
-zipLongest ldef rdef fn = go
-  where
-    go (x:xs) (y:ys) = fn x y : go xs ys
-    go [] ys         = map (fn ldef) ys
-    go xs []         = map (`fn` rdef) xs
+drawBinaryTree = Internal.drawBinaryTree foldTree
 
 newtype State s a = State
     { runState :: s -> (a, s)

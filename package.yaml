@@ -1,10 +1,10 @@
 name:                binary-tree
 version:             0.1.0.0
-github:              "githubuser/binary-tree"
-license:             BSD3
-author:              "Author name here"
-maintainer:          "example@example.com"
-copyright:           "2018 Author name here"
+github:              "oisdk/binary-tree"
+license:             MIT
+author:              "Donnacha Oisín Kidney"
+maintainer:          "mail@doisinkidney.com"
+copyright:           "2018 Donnacha Oisín Kidney"
 
 extra-source-files:
 - README.md
@@ -37,3 +37,5 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - binary-tree
+    - QuickCheck
+    - doctest
