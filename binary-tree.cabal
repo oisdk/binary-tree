@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: bb9c9fda4d064d3c0e83f9ff0761686d84e09f6c6b80dc0e7c4cbfedd9622817
+-- hash: b3e41f41f8f815cb0633c8f19028a81a8e912706341a070b81967470f43914ba
 
 name:           binary-tree
 version:        0.1.0.0
@@ -33,6 +33,7 @@ library
       base >=4.7 && <5
     , deepseq
   exposed-modules:
+      Data.Tree.Binary.Inorder
       Data.Tree.Binary.Internal
       Data.Tree.Binary.Preorder
   other-modules:
