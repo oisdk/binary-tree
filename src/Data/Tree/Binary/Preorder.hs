@@ -1,4 +1,5 @@
 {-# LANGUAGE CPP #-}
+
 {-# LANGUAGE BangPatterns #-}
 #if __GLASGOW_HASKELL__
 {-# LANGUAGE DeriveDataTypeable #-}
@@ -43,13 +44,13 @@ import GHC.Generics (Generic, Generic1)
 import GHC.Generics (Generic)
 #endif
 
-import Control.Applicative (Applicative(..), (<$>), (<**>),  Alternative,
-                            liftA2, liftA3)
+import Control.Applicative (Applicative(..), liftA3)
 import Data.Functor.Identity
-import Data.List (uncons)
-import Data.Maybe (fromMaybe)
+
+#if __GLASGOW_HASKELL__
 import Text.Read
 import Text.Read.Lex
+#endif
 
 import qualified Data.Tree.Binary.Internal as Internal
 
@@ -61,9 +62,9 @@ import Prelude hiding (
   )
 
 #if MIN_VERSION_base(4,6,0)
-import Data.Foldable (Foldable(foldl, foldl1, foldr, foldr1, foldMap, foldl', foldr'), toList)
+import Data.Foldable (Foldable(foldl, foldr, foldMap, foldl', foldr'))
 #else
-import Data.Foldable (Foldable(foldl, foldl1, foldr, foldr1, foldMap), foldl', toList)
+import Data.Foldable (Foldable(foldl, foldr, foldMap))
 #endif
   
 
@@ -76,17 +77,17 @@ data Tree a
   deriving (Show, Read, Eq, Ord, Typeable, Generic, Generic1, Data)
 
 instance Functor Tree where
-  fmap f Leaf = Leaf
+  fmap _ Leaf = Leaf
   fmap f (Node x l r) = Node (f x) (fmap f l) (fmap f r)
 
 instance Foldable Tree where
-  foldr f b Leaf = b
+  foldr _ b Leaf = b
   foldr f b (Node x l r) = f x (foldr f (foldr f b r) l)
 
-  foldl f b Leaf = b
+  foldl _ b Leaf = b
   foldl f b (Node x l r) = foldl f (foldl f (f b x) l) r
 
-  foldMap f Leaf = mempty
+  foldMap _ Leaf = mempty
   foldMap f (Node x l r) = f x `mappend` foldMap f l `mappend` foldMap f r
 
 #if __GLASGOW_HASKELL__
@@ -97,12 +98,12 @@ instance Foldable Tree where
 
 
 #if MIN_VERSION_base(4,6,0)
-  foldr' f !b Leaf = b
+  foldr' _ !b Leaf = b
   foldr' f !b (Node x l r) = case foldr' f b r of
     !b' -> case foldr' f b' l of
       !b'' -> f x b''
 
-  foldl' f !b Leaf = b
+  foldl' _ !b Leaf = b
   foldl' f !b (Node x l r) = case f b x of
     !b' -> case foldl' f b' l of
       !b'' -> foldl' f b'' r
@@ -113,7 +114,7 @@ instance Foldable Tree where
 #endif
 
 instance Traversable Tree where
-  traverse f Leaf = pure Leaf
+  traverse _ Leaf = pure Leaf
   traverse f (Node x l r) = liftA3 Node (f x) (traverse f l) (traverse f r)
 #if __GLASGOW_HASKELL__
   {-# INLINABLE traverse #-}
@@ -327,18 +328,6 @@ instance Applicative (State s) where
            (f, s') ->
              case runState xs s' of
                (x, s'') -> (f x, s''))
-
-liftA3State ::
-     (a -> b -> c -> d) -> State s a -> State s b -> State s c -> State s d
-liftA3State f xs ys zs =
-  State
-    (\s ->
-       case runState xs s of
-         (x, s') ->
-           case runState ys s' of
-             (y, s'') ->
-               case runState zs s'' of
-                 (z, s''') -> (f x y z, s'''))
 
 evalState :: State s a -> s -> a
 evalState xs s = fst (runState xs s)

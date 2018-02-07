@@ -26,6 +26,8 @@ library:
   source-dirs: src
   dependencies:
   - deepseq
+  ghc-options:
+  - -Wall
 
 tests:
   binary-tree-test:
