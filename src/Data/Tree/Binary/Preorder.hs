@@ -29,6 +29,7 @@ module Data.Tree.Binary.Preorder
   , zygoTree
    -- * Display
   , drawTree
+  , printTree
   ) where
 
 import Prelude hiding (
@@ -323,12 +324,12 @@ instance Semigroup.Semigroup (Tree a) where
 
 -- | This instance is necessarily inefficient, to obey the monoid laws.
 --
--- >>> putStr (drawTree (fromList [1..6]))
+-- >>> printTree (fromList [1..6])
 --    1
 --  2   5
 -- 3 4 6
 --
--- >>> putStr (drawTree (fromList [1..6] `mappend` singleton 7))
+-- >>> printTree (fromList [1..6] `mappend` singleton 7)
 --    1
 --  2   5
 -- 3 4 6 7
@@ -377,6 +378,15 @@ fromList xs = evalState (replicateA n u) xs
 -- 3 4 6 7
 drawTree :: Show a => Tree a -> String
 drawTree = Internal.drawBinaryTree foldTree
+
+-- | Pretty-print a tree.
+--
+-- >>> printTree (fromList [1..7])
+--    1
+--  2   5
+-- 3 4 6 7
+printTree :: Show a => Tree a -> IO ()
+printTree = putStrLn . drawTree
 
 newtype State s a = State
   { runState :: s -> (a, s)
