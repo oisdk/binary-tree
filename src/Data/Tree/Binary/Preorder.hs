@@ -45,23 +45,55 @@ module Data.Tree.Binary.Preorder
   , printTree
   ) where
 
-import Prelude hiding (
-  Functor(..)
-  ,replicate
-  ,length
-#if MIN_VERSION_base(4,8,0)
-  ,Foldable(..), Applicative, (<$>), foldMap, Monoid
+import Prelude
+  ( Eq
+
+  , Bool(..)
+  , otherwise
+  , (&&)
+
+  , Ord((<=), (>=), max)
+  , Ordering(..)
+
+  , Read
+  , Show
+  , String
+  , showString
+  , showChar
+  , showParen
+
+  , putStrLn
+  , IO
+
+  , Maybe
+  , maybe
+
+  , length
+
+  , Int
+  , Num((-))
+  , Enum(succ)
+  , Integral(div)
+  , even
+
+#if __GLASGOW_HASKELL__ >= 800
+  , errorWithoutStackTrace
+#else
+  , error
 #endif
+  , seq
+
+  , (.)
+  , ($)
   )
 
-import qualified Prelude
 
-import Control.Applicative (Applicative(..), liftA3)
+import Control.Applicative (Applicative(pure, (*>)), liftA3)
 
 import Control.DeepSeq (NFData(rnf))
 
-import Data.Monoid (Monoid(..))
-import Data.Functor (Functor(..))
+import Data.Monoid (Monoid(mappend, mempty))
+import Data.Functor (Functor(fmap, (<$)))
 
 #if MIN_VERSION_base(4,6,0)
 import Data.Foldable (Foldable(foldl, foldr, foldMap, foldl', foldr'))
@@ -353,7 +385,8 @@ printTree = putStrLn . drawTree
 
 -- $setup
 -- >>> import Test.QuickCheck
--- >>> import Data.Foldable
+-- >>> import Data.Foldable (toList)
+-- >>> import Prelude (Num(..), putStr)
 -- >>> :{
 -- instance Arbitrary a =>
 --          Arbitrary (Tree a) where
