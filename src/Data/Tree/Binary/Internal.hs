@@ -11,7 +11,7 @@ import Prelude hiding (
   Functor(..)
   ,unlines
 #if MIN_VERSION_base(4,8,0)
-  ,Applicative, (<$>), foldMap, Monoid
+  ,Foldable(..),Applicative, (<$>), foldMap, Monoid
 #endif
   )
 import Prelude hiding (unlines)

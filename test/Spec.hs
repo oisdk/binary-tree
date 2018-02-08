@@ -17,13 +17,16 @@ import Control.Applicative
 import Data.Foldable
 import Data.Traversable
 
+#if MIN_VERSION_base(4,9,0)
 import Data.Functor.Classes
+#endif
 
 import Text.Read
 
 --------------------------------------------------------------------------------
 -- Lifted Properties
 --------------------------------------------------------------------------------
+#if MIN_VERSION_base(4,9,0)
 eq1Prop ::
      (Eq (f OrdA), Eq1 f, Show (f OrdA), Arbitrary (f OrdA))
   => f OrdA
@@ -41,6 +44,7 @@ ord1Prop p =
   forAllShrink arbitrary shrink $ \xs ->
     forAllShrink (oneof [pure xs, arbitrary]) shrink $ \ys ->
       (Lifted xs `compare` Lifted ys) === ((xs `asTypeOf` p) `compare` ys)
+#endif
 
 --------------------------------------------------------------------------------
 -- Folds
@@ -136,8 +140,10 @@ main =
         [ testBatch (monoid (Preorder.Leaf :: Preorder.Tree A))
         , testBatch (ord (\x -> oneof [pure x, arbitrary :: Gen (Lifted Preorder.Tree OrdA)]))
         , testProperty "toList . fromList" (inverseL toList (Preorder.fromList :: [Int] -> Preorder.Tree Int))
+#if MIN_VERSION_base(4,9,0)
         , testProperty "eq1" (eq1Prop Preorder.Leaf)
         , testProperty "ord1" (ord1Prop Preorder.Leaf)
+#endif
         , testProperty "foldl" (foldlProp Preorder.Leaf)
         , testProperty "foldr'" (foldrProp' Preorder.Leaf)
         , testProperty "foldMap" (foldMapProp Preorder.Leaf)
@@ -149,8 +155,10 @@ main =
         [ testBatch (monoid (Inorder.Leaf :: Inorder.Tree A))
         , testBatch (ord (\x -> oneof [pure x, arbitrary :: Gen (Lifted Inorder.Tree OrdA)]))
         , testProperty "toList . fromList" (inverseL toList (Inorder.fromList :: [Int] -> Inorder.Tree Int))
+#if MIN_VERSION_base(4,9,0)
         , testProperty "eq1" (eq1Prop Inorder.Leaf)
         , testProperty "ord1" (ord1Prop Inorder.Leaf)
+#endif
         , testProperty "foldl" (foldlProp Inorder.Leaf)
         , testProperty "foldr" (foldrProp' Inorder.Leaf)
         , testProperty "foldMap" (foldMapProp Inorder.Leaf)
@@ -210,6 +218,8 @@ instance (Show a, Eq a) => EqProp (Inorder.Tree a) where
 --------------------------------------------------------------------------------
 -- Lifted
 --------------------------------------------------------------------------------
+
+#if MIN_VERSION_base(4,9,0)
 newtype Lifted f a = Lifted { runLifted :: f a }
 
 instance (Eq1 f, Eq a) => Eq (Lifted f a) where
@@ -232,3 +242,4 @@ instance EqProp (f a) => EqProp (Lifted f a) where
 instance Arbitrary (f a) => Arbitrary (Lifted f a) where
   arbitrary = fmap Lifted arbitrary
   shrink (Lifted xs) = fmap Lifted (shrink xs)
+#endif

@@ -48,10 +48,13 @@ module Data.Tree.Binary.Preorder
 import Prelude hiding (
   Functor(..)
   ,replicate
+  ,length
 #if MIN_VERSION_base(4,8,0)
-  ,Applicative, (<$>), foldMap, Monoid
+  ,Foldable(..), Applicative, (<$>), foldMap, Monoid
 #endif
   )
+
+import qualified Prelude
 
 import Control.Applicative (Applicative(..), liftA3)
 
@@ -316,7 +319,7 @@ instance Monoid (Tree a) where
 fromList :: [a] -> Tree a
 fromList xs = evalState (replicateA n u) xs
   where
-    n = length xs
+    n = Prelude.length xs
     u =
       State
         (\ys ->
