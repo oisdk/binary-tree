@@ -39,7 +39,18 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - binary-tree
-    - QuickCheck
-    - doctest
+    - QuickCheck >= 2.7.1
     - checkers
     - ChasingBottoms
+    - HUnit
+    - test-framework
+    - test-framework-quickcheck2
+  doctests:
+    main:                doctests.hs
+    source-dirs:         doctest
+    ghc-options:
+    - -threaded
+    dependencies:
+    - binary-tree
+    - doctest
+    - QuickCheck >= 2.7.1

@@ -1,10 +1,11 @@
-import Test.DocTest
 import Test.QuickCheck
 import Test.QuickCheck.Poly
-import Test.QuickCheck.Checkers
-import Test.QuickCheck.Classes
+import Test.QuickCheck.Checkers hiding (Test)
+import Test.QuickCheck.Classes hiding (Test)
 import Test.QuickCheck.Function
 import Test.ChasingBottoms
+import Test.Framework
+import Test.Framework.Providers.QuickCheck2
 
 import qualified Data.Tree.Binary.Preorder as Preorder
 import qualified Data.Tree.Binary.Inorder as Inorder
@@ -38,6 +39,10 @@ ord1Prop p =
   forAllShrink arbitrary shrink $ \xs ->
     forAllShrink (oneof [pure xs, arbitrary]) shrink $ \ys ->
       (Lifted xs `compare` Lifted ys) === ((xs `asTypeOf` p) `compare` ys)
+
+--------------------------------------------------------------------------------
+-- Folds
+--------------------------------------------------------------------------------
 
 foldlProp ::
      (Foldable f)
@@ -118,29 +123,39 @@ foldlStrictProp _ xs' =
       | x <- ys
       ]
 
+testBatch :: TestBatch -> Test
+testBatch (name, tests) = testGroup name (map (uncurry testProperty) tests)
+
 main :: IO ()
-main = do
-  quickBatch (monoid (Preorder.Leaf :: Preorder.Tree A))
-  quickCheck (inverseL toList (Preorder.fromList :: [Int] -> Preorder.Tree Int))
-  quickBatch (ord (\x -> oneof [pure x, arbitrary :: Gen (Lifted Preorder.Tree OrdA)]))
-  quickCheck (eq1Prop Preorder.Leaf)
-  quickCheck (ord1Prop Preorder.Leaf)
-  quickBatch (monoid (Inorder.Leaf :: Inorder.Tree A))
-  quickCheck (inverseL toList (Inorder.fromList :: [Int] -> Inorder.Tree Int))
-  quickBatch (ord (\x -> oneof [pure x, arbitrary :: Gen (Lifted Inorder.Tree OrdA)]))
-  quickCheck (eq1Prop Inorder.Leaf)
-  quickCheck (ord1Prop Preorder.Leaf)
-  quickCheck (foldlProp Inorder.Leaf)
-  quickCheck (foldlProp Preorder.Leaf)
-  quickCheck (foldrProp' Preorder.Leaf)
-  quickCheck (foldrProp' Inorder.Leaf)
-  quickCheck (foldMapProp Preorder.Leaf)
-  quickCheck (foldMapProp Inorder.Leaf)
-  quickCheck (foldrStrictProp Preorder.Leaf)
-  quickCheck (foldrStrictProp Inorder.Leaf)
-  quickCheck (foldlStrictProp Preorder.Leaf)
-  quickCheck (foldlStrictProp Inorder.Leaf)
-  doctest ["-isrc", "src/"]
+main =
+  defaultMain
+    [ testGroup
+        "Preorder"
+        [ testBatch (monoid (Preorder.Leaf :: Preorder.Tree A))
+        , testBatch (ord (\x -> oneof [pure x, arbitrary :: Gen (Lifted Preorder.Tree OrdA)]))
+        , testProperty "toList . fromList" (inverseL toList (Preorder.fromList :: [Int] -> Preorder.Tree Int))
+        , testProperty "eq1" (eq1Prop Preorder.Leaf)
+        , testProperty "ord1" (ord1Prop Preorder.Leaf)
+        , testProperty "foldl" (foldlProp Preorder.Leaf)
+        , testProperty "foldr'" (foldrProp' Preorder.Leaf)
+        , testProperty "foldMap" (foldMapProp Preorder.Leaf)
+        , testProperty "foldrStrict" (foldrStrictProp Preorder.Leaf)
+        , testProperty "foldlStrict" (foldlStrictProp Preorder.Leaf)
+        ]
+    , testGroup
+        "Inorder"
+        [ testBatch (monoid (Inorder.Leaf :: Inorder.Tree A))
+        , testBatch (ord (\x -> oneof [pure x, arbitrary :: Gen (Lifted Inorder.Tree OrdA)]))
+        , testProperty "toList . fromList" (inverseL toList (Inorder.fromList :: [Int] -> Inorder.Tree Int))
+        , testProperty "eq1" (eq1Prop Inorder.Leaf)
+        , testProperty "ord1" (ord1Prop Inorder.Leaf)
+        , testProperty "foldl" (foldlProp Inorder.Leaf)
+        , testProperty "foldr" (foldrProp' Inorder.Leaf)
+        , testProperty "foldMap" (foldMapProp Inorder.Leaf)
+        , testProperty "foldrStrict" (foldrStrictProp Inorder.Leaf)
+        , testProperty "foldlStrict" (foldlStrictProp Inorder.Leaf)
+        ]
+    ]
 
 --------------------------------------------------------------------------------------------------
 -- Arbitrary Instances

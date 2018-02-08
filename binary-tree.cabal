@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 39e6937611a65c864c6e470425a5e947f22ca1dba890d09a3a4c309ed3ba81ea
+-- hash: ddbc239d931eab6108899a627069da7ccdabf6b912c5ff2d503126671c354d49
 
 name:           binary-tree
 version:        0.1.0.0
@@ -48,10 +48,27 @@ test-suite binary-tree-test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       ChasingBottoms
-    , QuickCheck
+    , HUnit
+    , QuickCheck >=2.7.1
     , base >=4.0 && <5
     , binary-tree
     , checkers
+    , test-framework
+    , test-framework-quickcheck2
+  other-modules:
+      Paths_binary_tree
+  default-language: Haskell2010
+
+test-suite doctests
+  type: exitcode-stdio-1.0
+  main-is: doctests.hs
+  hs-source-dirs:
+      doctest
+  ghc-options: -threaded
+  build-depends:
+      QuickCheck >=2.7.1
+    , base >=4.0 && <5
+    , binary-tree
     , doctest
   other-modules:
       Paths_binary_tree
