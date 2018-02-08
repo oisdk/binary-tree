@@ -45,48 +45,14 @@ module Data.Tree.Binary.Preorder
   , printTree
   ) where
 
-import Prelude
-  ( Eq
-
-  , Bool(..)
-  , otherwise
-  , (&&)
-
-  , Ord((<=), (>=), max)
-  , Ordering(..)
-
-  , Read
-  , Show
-  , String
-  , showString
-  , showChar
-  , showParen
-
-  , putStrLn
-  , IO
-
-  , Maybe
-  , maybe
-
-  , length
-
-  , Int
-  , Num((-))
-  , Enum(succ)
-  , Integral(div)
-  , even
-
-#if __GLASGOW_HASKELL__ >= 800
-  , errorWithoutStackTrace
-#else
-  , error
+import Prelude hiding
+  ( replicate
+#if MIN_VERSION_base(4,8,0)
+  ,Functor(..),Foldable(..),Applicative, (<$>), foldMap, Monoid
 #endif
-  , seq
-
-  , (.)
-  , ($)
   )
 
+import Data.List (length)
 
 import Control.Applicative (Applicative(pure, (*>)), liftA3)
 
@@ -138,11 +104,10 @@ data Tree a
 #if __GLASGOW_HASKELL__
   , Typeable, Data
 #endif 
-#if __GLASGOW_HASKELL__ >= 702
+#if __GLASGOW_HASKELL__ >= 706
+  , Generic, Generic1
+#elif __GLASGOW_HASKELL__ >= 702
   , Generic
-#if __GLASGOW_HASKEL__ >= 706
-  , Generic1
-#endif
 #endif
   )
 
@@ -356,7 +321,7 @@ instance Monoid (Tree a) where
 fromList :: [a] -> Tree a
 fromList xs = evalState (replicateA n u) xs
   where
-    n = Prelude.length xs
+    n = length xs
     u =
       State
         (\ys ->

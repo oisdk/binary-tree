@@ -8,10 +8,9 @@ module Data.Tree.Binary.Internal
   ) where
 
 import Prelude hiding (
-  Functor(..)
-  ,unlines
+  unlines
 #if MIN_VERSION_base(4,8,0)
-  ,Foldable(..),Applicative, (<$>), foldMap, Monoid
+  ,Functor(..),Foldable(..),Applicative, (<$>), foldMap, Monoid
 #endif
   )
 import Prelude hiding (unlines)
