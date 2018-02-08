@@ -188,7 +188,7 @@ instance Show1 Tree where
         s 11 x . showChar ' ' . go 11 l . showChar ' ' . go 11 r
 
 instance Read1 Tree where
-#if __GLASGOW_HASKELL__
+#if MIN_VERSION_BASE(4,10,0) && __GLASGOW_HASKELL__
   liftReadPrec rp _ = go
     where
       go =
