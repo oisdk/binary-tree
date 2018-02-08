@@ -29,10 +29,10 @@ library:
       then:
         dependencies:
         - deepseq
+        - ghc-prim
       else:
         dependencies:
         - deepseq
-        - ghc-prim
   ghc-options:
   - -Wall
 
