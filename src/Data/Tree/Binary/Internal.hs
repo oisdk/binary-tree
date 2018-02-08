@@ -7,12 +7,22 @@ module Data.Tree.Binary.Internal
   , evalState
   ) where
 
+import Prelude hiding (
+  Functor(..)
+  ,unlines
+#if MIN_VERSION_base(4,8,0)
+  ,Applicative, (<$>), foldMap, Monoid
+#endif
+  )
 import Prelude hiding (unlines)
 
 #if MIN_VERSION_base(4,8,0)
 import Data.Functor.Identity (Identity(..))
 #endif
 
+import Data.Functor (Functor(fmap))
+import Control.Applicative (Applicative((<*>), pure))
+import Data.Monoid (Monoid(mappend))
 
 data LevelBuilder = LevelBuilder
   { _offset :: {-# UNPACK #-} !Int
