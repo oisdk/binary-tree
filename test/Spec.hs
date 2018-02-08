@@ -1,3 +1,5 @@
+{-# LANGUAGE CPP #-}
+
 import Test.QuickCheck
 import Test.QuickCheck.Poly
 import Test.QuickCheck.Checkers hiding (Test)

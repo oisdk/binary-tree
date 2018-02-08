@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 0f721badf97d23cdc38028b737ebe66199ed695b29559c7ebd77c5acbc414825
+-- hash: d4d2f03e4c1de69a6cbb73d64c4105fbff8f413c15b0ee0c2f39be115df0a647
 
 name:           binary-tree
 version:        0.1.0.0
@@ -31,13 +31,10 @@ library
   ghc-options: -Wall
   build-depends:
       base >=4.0 && <5
+    , deepseq
   if impl(ghc)
     build-depends:
-        deepseq
-  else
-    build-depends:
-        deepseq
-      , ghc-prim
+        ghc-prim
   exposed-modules:
       Data.Tree.Binary.Inorder
       Data.Tree.Binary.Internal

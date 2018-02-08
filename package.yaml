@@ -24,15 +24,12 @@ dependencies:
 
 library:
   source-dirs: src
+  dependencies:
+  - deepseq
   when:
     - condition: impl(ghc)
-      then:
-        dependencies:
-        - deepseq
-        - ghc-prim
-      else:
-        dependencies:
-        - deepseq
+      dependencies:
+      - ghc-prim
   ghc-options:
   - -Wall
 

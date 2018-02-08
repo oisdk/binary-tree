@@ -22,7 +22,7 @@ import Data.Functor.Identity (Identity(..))
 
 import Data.Functor (Functor(fmap))
 import Control.Applicative (Applicative((<*>), pure))
-import Data.Monoid (Monoid(mappend))
+import Data.Monoid (Monoid(mappend, mempty))
 
 data LevelBuilder = LevelBuilder
   { _offset :: {-# UNPACK #-} !Int
