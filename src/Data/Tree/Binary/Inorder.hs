@@ -120,7 +120,9 @@ import Text.Read
 
 #if __GLASGOW_HASKELL__
 import Data.Data (Data)
-import qualified Text.Read.Lex as Lex
+#if MIN_VERSION_base(4,10,0)
+import Text.Read.Lex (expect)
+#endif
 #endif
 
 import qualified Data.Tree.Binary.Internal as Internal
@@ -137,7 +139,10 @@ data Tree a
   , Typeable, Data
 #endif 
 #if __GLASGOW_HASKELL__ >= 702
-  , Generic, Generic1
+  , Generic
+#if __GLASGOW_HASKEL__ >= 706
+  , Generic1
+#endif
 #endif
   )
 
@@ -232,7 +237,7 @@ instance Read1 Tree where
         prec
           10
           (expect' (Ident "Node") *> liftA3 Node (step go) (step rp) (step go))
-      expect' = lift . Lex.expect
+      expect' = lift . expect
   liftReadListPrec = liftReadListPrecDefault
 #else
   liftReadsPrec rp _ = go

@@ -106,7 +106,7 @@ import Data.Functor.Classes
 import qualified Data.Semigroup as Semigroup
 #endif
 
-import Data.Traversable (Traversable(..))
+import Data.Traversable (Traversable(traverse))
 
 import Data.Typeable (Typeable)
 
@@ -120,7 +120,9 @@ import Text.Read
 
 #if __GLASGOW_HASKELL__
 import Data.Data (Data)
+#if MIN_VERSION_base(4,10,0)
 import qualified Text.Read.Lex as Lex
+#endif
 #endif
 
 import qualified Data.Tree.Binary.Internal as Internal
@@ -137,7 +139,10 @@ data Tree a
   , Typeable, Data
 #endif 
 #if __GLASGOW_HASKELL__ >= 702
-  , Generic, Generic1
+  , Generic
+#if __GLASGOW_HASKEL__ >= 706
+  , Generic1
+#endif
 #endif
   )
 
