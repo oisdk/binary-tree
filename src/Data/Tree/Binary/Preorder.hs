@@ -48,7 +48,7 @@ module Data.Tree.Binary.Preorder
 import Prelude hiding
   ( replicate
 #if MIN_VERSION_base(4,8,0)
-  ,Functor(..),Foldable(..),Applicative, (<$>), foldMap, Monoid
+  ,Functor(..),Foldable(..),Applicative(..), (<$>), foldMap, Monoid
 #else
   ,foldr,foldl
 #endif
@@ -56,7 +56,8 @@ import Prelude hiding
 
 import Data.List (length)
 
-import Control.Applicative (Applicative(pure, (*>)), liftA3)
+import Control.Applicative (Applicative(..), Alternative, liftA2, liftA3)
+import qualified Control.Applicative as Alternative (empty, (<|>)) 
 
 import Control.DeepSeq (NFData(rnf))
 
@@ -115,6 +116,52 @@ data Tree a
 instance Functor Tree where
   fmap _ Leaf = Leaf
   fmap f (Node x l r) = Node (f x) (fmap f l) (fmap f r)
+#if __GLASGOW_HASKELL__
+  {-# INLINABLE fmap #-}
+#endif
+  x <$ xs = go xs where
+    go Leaf = Leaf
+    go (Node _ l r) = Node x (go l) (go r)
+  {-# INLINE (<$) #-}
+
+instance Applicative Tree where
+  pure x = y where y = Node x y y
+  Leaf <*> _ = Leaf
+  Node _ _ _ <*> Leaf = Leaf
+  Node f fl fr <*> Node x xl xr = Node (f x) (fl <*> xl) (fr <*> xr)
+#if __GLASGOW_HASKELL__
+  {-# INLINABLE pure #-}
+  {-# INLINABLE (<*>) #-}
+#endif
+#if MIN_VERSION_base(4,10,0)
+  liftA2 f = go where
+    go Leaf _ = Leaf
+    go (Node _ _ _) Leaf = Leaf
+    go (Node x xl xr) (Node y yl yr) = Node (f x y) (go xl yl) (go xr yr)
+  {-# INLINE liftA2 #-}
+#endif
+#if MIN_VERSION_base(4,2,0)
+  Leaf *> _ = Leaf
+  Node _ _ _ *> Leaf = Leaf
+  Node _ xl xr *> Node y yl yr = Node y (xl *> yl) (xr *> yr)
+  Leaf <* _ = Leaf
+  Node _ _ _ <* Leaf = Leaf
+  Node x xl xr <* Node _ yl yr = Node x (xl <* yl) (xr <* yr)
+#if __GLASGOW_HASKELL__
+  {-# INLINABLE (*>) #-}
+  {-# INLINABLE (<*) #-}
+#endif
+#endif
+
+instance Alternative Tree where
+  empty = Leaf
+  {-# INLINE Alternative.empty #-}
+#if MIN_VERSION_base(4,9,0)
+  (<|>) = (Semigroup.<>)
+#else
+  (<|>) = mappend
+#endif
+  {-# INLINE (Alternative.<|>) #-}
 
 instance Foldable Tree where
   foldr _ b Leaf = b

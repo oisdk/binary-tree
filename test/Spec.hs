@@ -150,6 +150,7 @@ foldlStrictProp _ xs' =
 testBatch :: TestBatch -> Framework.Test
 testBatch (name, tests) = testGroup name (map (uncurry testProperty) tests)
 
+
 main :: IO ()
 main =
   defaultMain
@@ -169,6 +170,12 @@ main =
 #if MIN_VERSION_base(4,8,0) || !MIN_VERSION_base(4,6,0)
         , testProperty "foldlStrict" (foldlStrictProp Preorder.Leaf)
 #endif
+        , testBatch
+            ( "applicative"
+            , [ (name, test)
+              | (name, test) <- snd $ applicative (undefined :: Preorder.Tree (A, B, C))
+              , name /= "homomorphism"
+              ])
         ]
     , testGroup
         "Inorder"

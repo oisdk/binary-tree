@@ -56,7 +56,8 @@ import Prelude hiding
 
 import Data.List (length)
 
-import Control.Applicative (Applicative(pure, (*>)), liftA3)
+import Control.Applicative (Applicative(pure, (*>), (<*>)), Alternative, liftA2, liftA3)
+import qualified Control.Applicative as Alternative (empty, (<|>)) 
 
 import Control.DeepSeq (NFData(rnf))
 
@@ -115,6 +116,52 @@ data Tree a
 instance Functor Tree where
   fmap _ Leaf = Leaf
   fmap f (Node l x r) = Node (fmap f l) (f x) (fmap f r)
+#if __GLASGOW_HASKELL__
+  {-# INLINABLE fmap #-}
+#endif
+  x <$ xs = go xs where
+    go Leaf = Leaf
+    go (Node l _ r) = Node (go l) x (go r)
+  {-# INLINE (<$) #-}
+
+instance Applicative Tree where
+  pure x = y where y = Node y x y
+  Leaf <*> _ = Leaf
+  Node _ _ _ <*> Leaf = Leaf
+  Node fl f fr <*> Node xl x xr = Node (fl <*> xl) (f x) (fr <*> xr)
+#if __GLASGOW_HASKELL__
+  {-# INLINABLE pure #-}
+  {-# INLINABLE (<*>) #-}
+#endif
+#if MIN_VERSION_base(4,10,0)
+  liftA2 f = go where
+    go Leaf _ = Leaf
+    go (Node _ _ _) Leaf = Leaf
+    go (Node xl x xr) (Node yl y yr) = Node (go xl yl) (f x y) (go xr yr)
+  {-# INLINE liftA2 #-}
+#endif
+#if MIN_VERSION_base(4,2,0)
+  Leaf *> _ = Leaf
+  Node _ _ _ *> Leaf = Leaf
+  Node xl _ xr *> Node yl y yr = Node (xl *> yl) y (xr *> yr)
+  Leaf <* _ = Leaf
+  Node _ _ _ <* Leaf = Leaf
+  Node xl x xr <* Node yl _ yr = Node (xl <* yl) x (xr <* yr)
+#if __GLASGOW_HASKELL__
+  {-# INLINABLE (*>) #-}
+  {-# INLINABLE (<*) #-}
+#endif
+#endif
+
+instance Alternative Tree where
+  empty = Leaf
+  {-# INLINE Alternative.empty #-}
+#if MIN_VERSION_base(4,9,0)
+  (<|>) = (Semigroup.<>)
+#else
+  (<|>) = mappend
+#endif
+  {-# INLINE (Alternative.<|>) #-}
 
 instance Foldable Tree where
   foldr _ b Leaf = b
