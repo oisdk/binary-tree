@@ -278,6 +278,7 @@ foldTree b f = go
   where
     go Leaf = b
     go (Node l x r) = f (go l) x (go r)
+{-# INLINE foldTree #-}
 
 -- | The depth of the tree.
 -- 
