@@ -155,13 +155,13 @@ instance Applicative Tree where
 
 instance Alternative Tree where
   empty = Leaf
-  {-# INLINE Alternative.empty #-}
+  {-# INLINE empty #-}
 #if MIN_VERSION_base(4,9,0)
   (<|>) = (Semigroup.<>)
 #else
   (<|>) = mappend
 #endif
-  {-# INLINE (Alternative.<|>) #-}
+  {-# INLINE (<|>) #-}
 
 instance Foldable Tree where
   foldr _ b Leaf = b
