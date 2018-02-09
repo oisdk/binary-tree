@@ -2,16 +2,11 @@
 
 import Test.QuickCheck
 import Test.QuickCheck.Poly
-#if __GLASGOW_HASKELL__ >= 780
-import Test.QuickCheck.Checkers hiding (Test)
-import Test.QuickCheck.Classes hiding (Test)
-#else
-import Test.QuickCheck.Checkers hiding (Test)
-import Test.QuickCheck.Classes hiding (Test)
-#endif
+import Test.QuickCheck.Checkers
+import Test.QuickCheck.Classes
 import Test.QuickCheck.Function
 import Test.ChasingBottoms
-import Test.Framework
+import Test.Framework as Framework
 import Test.Framework.Providers.QuickCheck2
 
 import qualified Data.Tree.Binary.Preorder as Preorder
@@ -134,7 +129,7 @@ foldlStrictProp _ xs' =
       | x <- ys
       ]
 
-testBatch :: TestBatch -> Test
+testBatch :: TestBatch -> Framework.Test
 testBatch (name, tests) = testGroup name (map (uncurry testProperty) tests)
 
 main :: IO ()
