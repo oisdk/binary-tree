@@ -21,6 +21,24 @@ import Data.Traversable
 import Data.Functor.Classes
 #endif
 
+import Prelude hiding
+  ( replicate
+#if MIN_VERSION_base(4,8,0)
+  ,Functor(..),Foldable(..),Applicative, (<$>), foldMap, Monoid
+#else
+  ,foldr,foldl
+#endif
+  )
+
+import Data.Functor (Functor(fmap, (<$)))
+
+#if MIN_VERSION_base(4,6,0)
+import Data.Foldable (Foldable(foldl, foldr, foldMap, foldl', foldr'))
+#else
+import Data.Foldable (Foldable(foldl, foldr, foldMap))
+#endif
+
+
 import Text.Read
 
 --------------------------------------------------------------------------------
