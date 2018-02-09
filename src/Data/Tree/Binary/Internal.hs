@@ -13,7 +13,6 @@ import Prelude hiding (
   ,Functor(..),Foldable(..),Applicative, (<$>), foldMap, Monoid
 #endif
   )
-import Prelude hiding (unlines)
 
 #if MIN_VERSION_base(4,8,0)
 import Data.Functor.Identity (Identity(..))
