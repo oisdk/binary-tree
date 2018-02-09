@@ -103,13 +103,12 @@ data Tree a
          a
          (Tree a)
   deriving (Show, Read, Eq, Ord
-#if __GLASGOW_HASKELL__
-  , Typeable, Data
-#endif 
 #if __GLASGOW_HASKELL__ >= 706
-  , Generic, Generic1
+  , Typeable, Data, Generic, Generic1
 #elif __GLASGOW_HASKEL__ >= 702
-  , Generic
+  , Typeable, Data, Generic
+#elif __GLASGOW_HASKELL__
+  , Typeable, Data
 #endif
   )
 
