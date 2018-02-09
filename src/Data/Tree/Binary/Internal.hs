@@ -1,7 +1,34 @@
 {-# LANGUAGE CPP #-}
 
+#if __GLASGOW_HASKELL__ >= 703
+{-# LANGUAGE Safe #-}
+#endif
+
+-- |
+-- Module      : Data.Tree.Binary.Internal
+-- Description : Common utility functions for the binary-tree package.
+-- Copyright   : (c) Donnacha Oisín Kidney 2018
+-- License     : MIT
+-- Maintainer  : mail@doisinkidney.com
+-- Portability : portable
+--
+-- = WARNING
+-- 
+-- This module is considered __internal__.
+-- 
+-- The Package Versioning Policy __does not apply__.
+-- 
+-- This contents of this module may change __in any way whatsoever__
+-- and __without any warning__ between minor versions of this package.
+-- 
+-- Authors importing this module are expected to track development
+-- closely.
+-- 
+-- = Description
+--
+-- This module exports some utility functions common to both tree modules.
 module Data.Tree.Binary.Internal
-  ( drawBinaryTree
+  ( drawTree
   , Identity(..)
   , State(..)
   , evalState
@@ -37,12 +64,14 @@ data LevelBuilder = LevelBuilder
   , levels :: [Padding -> Padding]
   }
 
-drawBinaryTree ::
+-- | Given a folding function for a binary tree, draw the tree in a structured,
+-- human-readable way.
+drawTree ::
      Show a
   => (LevelBuilder -> (a -> LevelBuilder -> LevelBuilder -> LevelBuilder) -> b -> LevelBuilder)
   -> b
   -> String
-drawBinaryTree ft = runLevels . levels . ft (LevelBuilder 0 []) f
+drawTree ft = runLevels . levels . ft (LevelBuilder 0 []) f
   where
     f xv (LevelBuilder llen lb) (LevelBuilder rlen rb) =
       LevelBuilder
@@ -77,6 +106,9 @@ runLevel (Padding n xs) = pad n . f xs
 --------------------------------------------------------------------------------
 -- State
 --------------------------------------------------------------------------------
+
+-- | A clone of Control.Monad.State.Strict, reimplemented here to avoid the
+-- dependency.
 newtype State s a = State
   { runState :: s -> (a, s)
   }
@@ -101,6 +133,7 @@ instance Applicative (State s) where
                (x, s'') -> (f x, s''))
   {-# INLINE (<*>) #-}
 
+-- | Evaluate a stateful action.
 evalState :: State s a -> s -> a
 evalState xs s = fst (runState xs s)
 {-# INLINE evalState #-}
@@ -109,6 +142,8 @@ evalState xs s = fst (runState xs s)
 -- Identity
 --------------------------------------------------------------------------------
 #if !MIN_VERSION_base(4,8,0)
+-- | A clone of Data.Functor.Identity, reimplemented here when it's not yet
+-- included in base.
 newtype Identity a = Identity {runIdentity :: a}
 
 instance Functor Identity where

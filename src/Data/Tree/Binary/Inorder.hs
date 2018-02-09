@@ -391,7 +391,7 @@ fromList xs = evalState (replicateA n u) xs
 --  2   6
 -- 1 3 5 7
 drawTree :: Show a => Tree a -> String
-drawTree = Internal.drawBinaryTree (\b f -> foldTree b (flip f))
+drawTree = Internal.drawTree (\b f -> foldTree b (flip f))
 
 -- | Pretty-print a tree.
 --
