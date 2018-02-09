@@ -2,11 +2,11 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 80d9a9c9dd8b6e08baacf28b084ab00ec2d83310d2455ad48333944a9019e3ce
+-- hash: 10aae8117e37286b5a5aa81de8d8c226115f3709b34544ca5e051ceee307367d
 
 name:           binary-tree
 version:        0.1.0.0
-description:    Please see the README on Github at <https://github.com/githubuser/binary-tree#readme>
+description:    Please see the README on Github at <https://github.com/oisdk/binary-tree#readme>
 homepage:       https://github.com/oisdk/binary-tree#readme
 bug-reports:    https://github.com/oisdk/binary-tree/issues
 author:         Donnacha Oisín Kidney
