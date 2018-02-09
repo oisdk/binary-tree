@@ -56,7 +56,7 @@ import Prelude hiding
 
 import Data.List (length)
 
-import Control.Applicative (Applicative(pure, (*>), (<*>)), Alternative, liftA2, liftA3)
+import Control.Applicative (Applicative(..), Alternative, liftA2, liftA3)
 import qualified Control.Applicative as Alternative (empty, (<|>)) 
 
 import Control.DeepSeq (NFData(rnf))
