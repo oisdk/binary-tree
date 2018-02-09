@@ -49,6 +49,8 @@ import Prelude hiding
   ( replicate
 #if MIN_VERSION_base(4,8,0)
   ,Functor(..),Foldable(..),Applicative, (<$>), foldMap, Monoid
+#else
+  ,foldr,foldl
 #endif
   )
 
