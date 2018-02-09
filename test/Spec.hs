@@ -166,7 +166,9 @@ main =
         , testProperty "foldr'" (foldrProp' Preorder.Leaf)
         , testProperty "foldMap" (foldMapProp Preorder.Leaf)
         , testProperty "foldrStrict" (foldrStrictProp Preorder.Leaf)
+#if MIN_VERSION_base(4,9,0) || !MIN_VERSION_base(4,8,0)
         , testProperty "foldlStrict" (foldlStrictProp Preorder.Leaf)
+#endif
         ]
     , testGroup
         "Inorder"
@@ -181,7 +183,9 @@ main =
         , testProperty "foldr" (foldrProp' Inorder.Leaf)
         , testProperty "foldMap" (foldMapProp Inorder.Leaf)
         , testProperty "foldrStrict" (foldrStrictProp Inorder.Leaf)
-        , testProperty "foldlStrict" (foldlStrictProp Inorder.Leaf)
+#if MIN_VERSION_base(4,9,0) || !MIN_VERSION_base(4,8,0)
+        , testProperty "foldlStrict" (foldlStrictProp Preorder.Leaf)
+#endif
         ]
     ]
 
