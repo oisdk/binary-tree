@@ -251,8 +251,11 @@ instance (Show1 f, Show a) => Show (Lifted f a) where
   showList xs = liftShowList showsPrec showList [ x | Lifted x <- xs ]
 
 instance (Read1 f, Read a) => Read (Lifted f a) where
-  readsPrec n xs = [ (Lifted x,ys) | (x, ys) <- readsPrec1 n xs ]
+#if MIN_VERSION_base(4,10,0)
   readPrec = fmap Lifted readPrec1
+#else
+  readsPrec n xs = [ (Lifted x,ys) | (x, ys) <- readsPrec1 n xs ]
+#endif
 
 instance EqProp (f a) => EqProp (Lifted f a) where
   Lifted x =-= Lifted y = x =-= y
