@@ -2,8 +2,13 @@
 
 import Test.QuickCheck
 import Test.QuickCheck.Poly
+#if __GLASGOW_HASKELL__ >= 780
 import Test.QuickCheck.Checkers hiding (Test)
 import Test.QuickCheck.Classes hiding (Test)
+#else
+import Test.QuickCheck.Checkers hiding (Test)
+import Test.QuickCheck.Classes hiding (Test)
+#endif
 import Test.QuickCheck.Function
 import Test.ChasingBottoms
 import Test.Framework
@@ -138,9 +143,9 @@ main =
     [ testGroup
         "Preorder"
         [ testBatch (monoid (Preorder.Leaf :: Preorder.Tree A))
-        , testBatch (ord (\x -> oneof [pure x, arbitrary :: Gen (Lifted Preorder.Tree OrdA)]))
         , testProperty "toList . fromList" (inverseL toList (Preorder.fromList :: [Int] -> Preorder.Tree Int))
 #if MIN_VERSION_base(4,9,0)
+        , testBatch (ord (\x -> oneof [pure x, arbitrary :: Gen (Lifted Preorder.Tree OrdA)]))
         , testProperty "eq1" (eq1Prop Preorder.Leaf)
         , testProperty "ord1" (ord1Prop Preorder.Leaf)
 #endif
@@ -153,9 +158,9 @@ main =
     , testGroup
         "Inorder"
         [ testBatch (monoid (Inorder.Leaf :: Inorder.Tree A))
-        , testBatch (ord (\x -> oneof [pure x, arbitrary :: Gen (Lifted Inorder.Tree OrdA)]))
         , testProperty "toList . fromList" (inverseL toList (Inorder.fromList :: [Int] -> Inorder.Tree Int))
 #if MIN_VERSION_base(4,9,0)
+        , testBatch (ord (\x -> oneof [pure x, arbitrary :: Gen (Lifted Inorder.Tree OrdA)]))
         , testProperty "eq1" (eq1Prop Inorder.Leaf)
         , testProperty "ord1" (ord1Prop Inorder.Leaf)
 #endif
