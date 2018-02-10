@@ -50,58 +50,44 @@ import Control.Applicative (Applicative((<*>), pure))
 --------------------------------------------------------------------------------
 -- Drawing Trees
 --------------------------------------------------------------------------------
-data Padding =
-  Padding {-# UNPACK #-}!Int
-          Prefix
-
-data Prefix
-  = Nil
-  | Prefix String
-           Padding
-
-data LevelBuilder = LevelBuilder
-  { _offset :: {-# UNPACK #-}!Int
-  , levels :: [Padding -> Padding]
-  }
 
 -- | Given a folding function for a binary tree, draw the tree in a structured,
 -- human-readable way.
+type Base = (Bool -> ShowS -> Int -> [String] -> [String]) 
+
 drawTree ::
-     Show a
-  => (LevelBuilder -> (a -> LevelBuilder -> LevelBuilder -> LevelBuilder) -> b -> LevelBuilder)
-  -> b
+     (a -> ShowS)
+  -> (t -> Maybe (a, t, t))
+  -> (Base -> (a -> Base -> Base -> Base) -> t -> Base)
+  -> t
   -> String
-drawTree ft = runLevels . levels . ft (LevelBuilder 0 []) f
-  where
-    f xv (LevelBuilder llen lb) (LevelBuilder rlen rb) =
-      LevelBuilder
-        (llen + rlen + xlen)
-        ((Padding llen . Prefix xshw . cons rlen) : zipLongest lb rb)
-      where
-        xshw = show xv
-        xlen = length xshw
-        zipLongest (x:xs) (y:ys) = (x . cons xlen . y) : zipLongest xs ys
-        zipLongest [] ys = map (cons (llen + xlen) .) ys
-        zipLongest xs [] = map (. cons (rlen + xlen)) xs
-
-cons :: Int -> Padding -> Padding
-cons i (Padding j xs) = Padding (i + j) xs
-
-nil :: Padding
-nil = Padding 0 Nil
-
-runLevels :: [Padding -> Padding] -> String
-runLevels [] = ""
-runLevels (x:xs) =
-  runLevel (x nil) (foldr (\e a -> '\n' : runLevel (e nil) a) "" xs)
-
-runLevel :: Padding -> String -> String
-runLevel (Padding n xs) = pad n . f xs
-  where
-    pad 0 = id
-    pad m = (' ' :) . pad (m - 1)
-    f Nil = id
-    f (Prefix s ys) = (s ++) . runLevel ys
+drawTree sf unc ft t =
+  case unc t of
+    Nothing -> "╼"
+    Just (x', l', r') ->
+      unlines
+        ((ft b f l' True id xlen' . (:) ('╾' : xshw') . ft b f r' False id xlen')
+           [])
+      where xshw' = sf x' "┤"
+            xlen' = length xshw'
+            b up k i
+              | up = (k (pad i "┌╼") :)
+              | otherwise = (k (pad i "└╼") :)
+            f x ls rs up k i
+              | up =
+                ls' (k . pad i) j .
+                ((k . pad i . showChar '┌') xshw :) .
+                (rs' (k . pad i . showChar '│') (j - 1))
+              | otherwise =
+                ls' (k . pad i . showChar '│') (j - 1) .
+                ((k . pad i . showChar '└') xshw :) . (rs' (k . pad i) j)
+              where
+                xshw = sf x "┤"
+                j = length xshw
+                ls' = ls True
+                rs' = rs False
+            pad 0 = id
+            pad n = showChar ' ' . pad (n - 1)
 
 --------------------------------------------------------------------------------
 -- State

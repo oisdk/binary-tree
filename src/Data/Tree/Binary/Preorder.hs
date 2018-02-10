@@ -42,6 +42,7 @@ module Data.Tree.Binary.Preorder
   , depth
    -- * Display
   , drawTree
+  , drawTreeWith
   , printTree
   ) where
 
@@ -299,9 +300,15 @@ unfoldTree f = go
 -- | @'replicate' n a@ creates a tree of size @n@ filled @a@.
 --
 -- >>> putStr (drawTree (replicate 4 ()))
---     ()
---   ()  ()
--- ()
+--          ┌╼
+--       ┌()┤
+--       │  └╼
+--    ┌()┤
+--    │  └╼
+-- ╾()┤
+--    │  ┌╼
+--    └()┤
+--       └╼
 --
 -- prop> \(NonNegative n) -> length (replicate n ()) === n
 replicate :: Int -> a -> Tree a
@@ -339,14 +346,36 @@ instance Semigroup.Semigroup (Tree a) where
 -- | This instance is necessarily inefficient, to obey the monoid laws.
 --
 -- >>> printTree (fromList [1..6])
---    1
---  2   5
--- 3 4 6
+--       ┌╼
+--     ┌3┤
+--     │ └╼
+--   ┌2┤
+--   │ │ ┌╼
+--   │ └4┤
+--   │   └╼
+-- ╾1┤
+--   │   ┌╼
+--   │ ┌6┤
+--   │ │ └╼
+--   └5┤
+--     └╼
 --
 -- >>> printTree (fromList [1..6] `mappend` singleton 7)
---    1
---  2   5
--- 3 4 6 7
+--       ┌╼
+--     ┌3┤
+--     │ └╼
+--   ┌2┤
+--   │ │ ┌╼
+--   │ └4┤
+--   │   └╼
+-- ╾1┤
+--   │   ┌╼
+--   │ ┌6┤
+--   │ │ └╼
+--   └5┤
+--     │ ┌╼
+--     └7┤
+--       └╼
 --
 -- 'mappend' distributes over 'toList':
 --
@@ -387,20 +416,68 @@ fromList xs = evalState (replicateA n u) xs
 -- | Convert a tree to a human-readable structural representation.
 --
 -- >>> putStr (drawTree (fromList [1..7]))
---    1
---  2   5
--- 3 4 6 7
+--       ┌╼
+--     ┌3┤
+--     │ └╼
+--   ┌2┤
+--   │ │ ┌╼
+--   │ └4┤
+--   │   └╼
+-- ╾1┤
+--   │   ┌╼
+--   │ ┌6┤
+--   │ │ └╼
+--   └5┤
+--     │ ┌╼
+--     └7┤
+--       └╼
 drawTree :: Show a => Tree a -> String
-drawTree = Internal.drawTree foldTree
+drawTree = drawTreeWith shows
+
+-- | Pretty-print a tree with a custom show function.
+--
+-- >>> putStr (drawTreeWith (\_ -> showChar '─') (fromList [1..7]))
+--       ┌╼
+--     ┌─┤
+--     │ └╼
+--   ┌─┤
+--   │ │ ┌╼
+--   │ └─┤
+--   │   └╼
+-- ╾─┤
+--   │   ┌╼
+--   │ ┌─┤
+--   │ │ └╼
+--   └─┤
+--     │ ┌╼
+--     └─┤
+--       └╼
+drawTreeWith :: (a -> ShowS) -> Tree a -> String
+drawTreeWith sf = Internal.drawTree sf unc foldTree
+  where
+    unc Leaf = Nothing
+    unc (Node x l r) = Just (x, l, r)
 
 -- | Pretty-print a tree.
 --
 -- >>> printTree (fromList [1..7])
---    1
---  2   5
--- 3 4 6 7
+--       ┌╼
+--     ┌3┤
+--     │ └╼
+--   ┌2┤
+--   │ │ ┌╼
+--   │ └4┤
+--   │   └╼
+-- ╾1┤
+--   │   ┌╼
+--   │ ┌6┤
+--   │ │ └╼
+--   └5┤
+--     │ ┌╼
+--     └7┤
+--       └╼
 printTree :: Show a => Tree a -> IO ()
-printTree = putStrLn . drawTree
+printTree = putStr . drawTree
 
 -- $setup
 -- >>> import Test.QuickCheck
