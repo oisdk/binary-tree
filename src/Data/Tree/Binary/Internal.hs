@@ -47,31 +47,43 @@ import Data.Functor.Identity (Identity(..))
 import Data.Functor (Functor(fmap))
 import Control.Applicative (Applicative((<*>), pure))
 
-#if MIN_VERSION_base(4,7,0)
-import Data.Bool (bool)
-#else
 bool :: a -> a -> Bool -> a
 bool f _ False = f
 bool _ t True  = t
-#endif
+{-# INLINE bool #-}
 
 --------------------------------------------------------------------------------
 -- Drawing Trees
 --------------------------------------------------------------------------------
 
+data Drawing
+  = Nil
+  | OpChar {-# UNPACK #-} !Char !Drawing
+  | Padding {-# UNPACK #-} !Int !Drawing
+  | Item String Drawing
+
+runDrawing :: Drawing -> ShowS
+runDrawing Nil st = st
+runDrawing (OpChar x xs) st = x : runDrawing xs st
+runDrawing (Item x xs) st = x ++ runDrawing xs st
+runDrawing (Padding i xs) st = pad i (runDrawing xs st) 
+  where
+    pad 0 = id
+    pad n = showChar ' ' . pad (n-1)
+
 -- | Given an uncons function for a binary tree, draw the tree in a structured,
 -- human-readable way.
 drawTree :: (a -> String) -> (t -> Maybe (a, t, t)) -> t -> ShowS
-drawTree sf project = maybe nd root . project
+drawTree sf project = runDrawing . maybe (nd Nil) root . project
   where
-    go (x, l, r) = node x (fmap go (project l)) (fmap go (project r))
+    go (x, l, r) = node x (project l) (project r)
 
     -- Root special case (no incoming direction)
     root (x, l, r) =
-      maybe id (\t -> go t True id xlen) ls .
-      showString xshw .
-      endc ls rs .
-      nl . maybe id (\t -> go t False id xlen) rs
+      maybeAp (\t -> go t True id xlen) ls $
+      Item xshw $
+      endc ls rs $
+      nl $ maybeAp (\t -> go t False id xlen) rs $ Nil
       where
         xshw = sf x
         xlen = length xshw
@@ -85,35 +97,42 @@ drawTree sf project = maybe nd root . project
     -- Padding -> 
     -- Offset -> 
     -- Result
-    node x ls rs up k i =
-      maybe id (branch True) ls .
-      k .  pad i . bool bl tl up . showString xshw . endc ls rs . nl . 
-      maybe id (branch False) rs
+    node x ls rs up k i b =
+      maybeAp (branch True) ls $
+      k $ pad i $ bool bl tl up $ Item xshw $ endc ls rs $ nl $ 
+      maybeAp (branch False) rs b
       where
         xshw = sf x
         xlen = length xshw
         branch d fn
-          | d == up = fn d (k . pad i) (xlen + 1)
-          | otherwise = fn d (k . pad i . vm) xlen
+          | d == up = go fn d (k . pad i) (xlen + 1)
+          | otherwise = go fn d (k . pad i . vm) xlen
+        {-# INLINE branch #-}
+    {-# INLINE node #-}
 
-    endc Nothing Nothing = id
-    endc (Just _) Nothing = br
-    endc Nothing (Just _) = tr
-    endc (Just _) (Just _) = rt
+    endc Nothing  Nothing  b = b
+    endc (Just _) Nothing  b = br b
+    endc Nothing  (Just _) b = tr b
+    endc (Just _) (Just _) b = rt b
+    {-# INLINE endc #-}
     
-    pad 0 = id
-    pad n = sp . pad (n - 1)
+    pad i (Padding j xs) = Padding (i+j) xs
+    pad i xs = Padding i xs
+    {-# INLINE pad #-}
+
+    maybeAp _ Nothing y = y
+    maybeAp f (Just x) y = f x y
+    {-# INLINE maybeAp #-}
 
     -- Characters
-    nl = showChar '\n'
-    bl = showChar '└'
-    br = showChar '┘'
-    tl = showChar '┌'
-    tr = showChar '┐'
-    vm = showChar '│'
-    rt = showChar '┤'
-    sp = showChar ' '
-    nd = showChar '╼'
+    nl = OpChar '\n'
+    bl = OpChar '└'
+    br = OpChar '┘'
+    tl = OpChar '┌'
+    tr = OpChar '┐'
+    vm = OpChar '│'
+    rt = OpChar '┤'
+    nd = OpChar '╼'
 
 {-# INLINE drawTree #-}
 
