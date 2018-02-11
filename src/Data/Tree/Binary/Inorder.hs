@@ -418,16 +418,10 @@ drawTree t = drawTreeWith show t ""
 --  └─┤
 --    └─
 drawTreeWith :: (a -> String) -> Tree a -> ShowS
-drawTreeWith sf = Internal.drawTree sf unc foldTree'
+drawTreeWith sf = Internal.drawTree sf uncons'
   where
-    unc Leaf = Nothing
-    unc (Node l x r) = Just (x, l, r)
-    foldTree' b f = go where
-      go Leaf = b
-      go (Node Leaf x Leaf) = f x Nothing Nothing
-      go (Node l x Leaf) = f x (Just (go l)) Nothing
-      go (Node Leaf x r) = f x Nothing (Just (go r))
-      go (Node l x r) = f x (Just (go l)) (Just (go r))
+    uncons' Leaf = Nothing
+    uncons' (Node l x r) = Just (x, l, r)
     
 
 -- | Pretty-print a tree.

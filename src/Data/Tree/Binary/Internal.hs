@@ -48,6 +48,16 @@ import Data.Functor (Functor(fmap))
 import Control.Applicative (Applicative((<*>), pure))
 
 --------------------------------------------------------------------------------
+-- Base Functor For Recursion Scheme
+--------------------------------------------------------------------------------
+
+newtype TreeF a r = TreeF { runTreeF :: Maybe (a, r, r) }
+
+instance Functor (TreeF a) where
+  fmap f (TreeF Nothing) = TreeF Nothing
+  fmap f (TreeF (Just (x,l,r))) = TreeF (Just (x, f l, f r))
+
+--------------------------------------------------------------------------------
 -- Drawing Trees
 --------------------------------------------------------------------------------
 
@@ -56,39 +66,51 @@ import Control.Applicative (Applicative((<*>), pure))
 drawTree ::
      (a -> String)
   -> (t -> Maybe (a, t, t))
-  -> (Base -> (a -> Maybe Base -> Maybe Base -> Base) -> t -> Base)
   -> t
   -> ShowS
-drawTree sf unc ft t =
-  case unc t of
-    Nothing -> showChar '╼'
-    Just (x', l', r') ->
-      ft b f l' True id xlen' .  showString xshw' . showChar '┤' . showChar '\n' . ft b f r' False id xlen'
-      where xshw' = sf x'
-            xlen' = length xshw'
-            b _ k _ = k . showChar '\n'
-            f x ls' rs' up k i
-              | up =
-                ls (k . pad i) j .
-                k . pad i . showChar '┌' . xshs . showChar '\n' .
-                rs (k . pad i . showChar '│') (j - 1)
-              | otherwise =
-                ls (k . pad i . showChar '│') (j - 1) .
-                k . pad i . showChar '└' . xshs . showChar '\n' . 
-                rs (k . pad i) j
-              where
-                xshw = sf x
-                xlen = length xshw
-                endc Nothing  Nothing  = (xlen, id)
-                endc (Just _) Nothing  = (xlen + 1, showChar '┘')
-                endc Nothing  (Just _) = (xlen + 1, showChar '┐')
-                endc (Just _) (Just _) = (xlen + 1, showChar '┤')
-                (j, eshs) = endc ls' rs'
-                xshs = showString xshw . eshs
-                ls = maybe (\_ _ -> id) ($ True) ls'
-                rs = maybe (\_ _ -> id) ($ False) rs'
-            pad 0 = id
-            pad n = showChar ' ' . pad (n - 1)
+drawTree sf project = firstLevel . project
+  where
+    ft = maybe b ftc . project
+    ftc (x,l,r) = f x (fmap ftc (project l)) (fmap ftc (project r))
+    firstLevel Nothing = showChar '╼'
+    firstLevel (Just (x, l', r')) = ls . showString xshw . crn . showChar '\n' . rs where
+      xshw = sf x
+      xlen = length xshw
+      ls' = project l'
+      rs' = project r'
+      ls = maybe id (\t -> ftc t True  id xlen) ls'
+      rs = maybe id (\t -> ftc t False id xlen) rs'
+      crn = case (ls',rs') of 
+        (Nothing,Nothing) -> id
+        (Just _ ,Nothing) -> showChar '┘'
+        (Nothing,Just _ ) -> showChar '┐'
+        (Just _ ,Just _ ) -> showChar '┤'
+    b _ k _ = k . showChar '\n'
+    branch k i j d u =
+      maybe
+        id
+        (\fn ->
+           if d == u
+             then fn d (k . pad i) j
+             else fn d (k . pad i . showChar '│') (j - 1))
+    f x ls' rs' up k i = ls . k . pad i . corn . xshs . showChar '\n' . rs
+      where
+        corn
+          | up = showChar '┌'
+          | otherwise = showChar '└'
+        xshw = sf x
+        xlen = length xshw
+        endc Nothing Nothing = (xlen, id)
+        endc (Just _) Nothing = (xlen + 1 , showChar '┘')
+        endc Nothing (Just _) = (xlen + 1 , showChar '┐')
+        endc (Just _) (Just _) = (xlen + 1, showChar '┤')
+        (j, eshs) = endc ls' rs'
+        xshs = showString xshw . eshs
+        ls = branch k i j True up ls'
+        rs = branch k i j False up rs'
+    pad 0 = id
+    pad n = showChar ' ' . pad (n - 1)
+
 {-# INLINE drawTree #-}
 
 type Base = (Bool -> ShowS -> Int -> ShowS) 
