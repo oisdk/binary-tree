@@ -54,8 +54,6 @@ import Prelude hiding
 #endif
   )
 
-import Data.List (length)
-
 import Control.Applicative (Applicative(..), liftA2)
 
 import Control.DeepSeq (NFData(rnf))
@@ -96,7 +94,7 @@ import Text.Read.Lex (expect)
 import Control.Monad.Fix (MonadFix(..), fix)
 
 import qualified Data.Tree.Binary.Internal as Internal
-import Data.Tree.Binary.Internal (Identity(..), State(..), evalState)
+import Data.Tree.Binary.Internal (Identity(..), State)
 
 #if __GLASGOW_HASKELL__ >= 800
 import GHC.Stack (HasCallStack)
@@ -341,28 +339,48 @@ replicateA n x = go n
 {-# SPECIALISE replicateA :: Int -> State s a -> State s (Tree a) #-}
 
 -- | Construct a tree from a list.
+--
+-- The constructed tree is somewhat, but not totally, balanced.
+--
+-- >>> printTree (fromList [1,2,3,4])
+--  ┌1
+-- ┌┤
+-- │└2
+-- ┤
+-- │┌3
+-- └┤
+--  └4
+--
+-- >>> printTree (fromList [1,2,3,4,5,6])
+--   ┌1
+--  ┌┤
+--  │└2
+-- ┌┤
+-- ││┌3
+-- │└┤
+-- │ └4
+-- ┤
+-- │┌5
+-- └┤
+--  └6
+
 #if __GLASGOW_HASKELL__ >= 800
 fromList :: HasCallStack => [a] -> Tree a
 #else
 fromList :: [a] -> Tree a
 #endif
 fromList [] = error "Data.Tree.Binary.Leafy.fromList: empty list!"
-fromList xs = evalState (replicateA n u) xs
+fromList (x':xs') = go x' xs'
   where
-    n = length xs
-    u =
-      State
-        (\ys ->
-           case ys of
-             [] -> 
-#if __GLASGOW_HASKELL__ >= 800
-               errorWithoutStackTrace
-#else
-               error
-#endif
-               "Data.Tree.Binary.Leafy.fromList: bug!"
-             z:zs -> (z, zs))
-
+    go x [] = Leaf x
+    go a (b:l) = go' (Leaf a :*: Leaf b) (pairMap l)
+    pairMap (x:y:rest) = (Leaf x :*: Leaf y) : pairMap rest
+    pairMap [] = []
+    pairMap [x] = [Leaf x]
+    go' x [] = x
+    go' a (b:l) = go' (a :*: b) (pairs l)
+    pairs (x:y:rest) = (x :*: y) : pairs rest
+    pairs xs = xs
 
 -- | Convert a tree to a human-readable structural representation.
 --
@@ -390,6 +408,7 @@ printTree = putStr . drawTree
 -- >>> import Test.QuickCheck
 -- >>> import Data.Foldable (toList)
 -- >>> import Prelude (Num(..), putStr)
+-- >>> import Data.Tree.Binary.Internal (evalState, State(..))
 -- >>> :{
 -- instance Arbitrary a =>
 --          Arbitrary (Tree a) where

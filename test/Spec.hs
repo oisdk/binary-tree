@@ -204,6 +204,19 @@ main =
 #if MIN_VERSION_base(4,9,0)
         testProperty "semigroup" (isAssoc ((Semigroup.<>) :: Leafy.Tree Int -> Leafy.Tree Int -> Leafy.Tree Int) )
 #endif
+        , testProperty "toList . fromList" (inverseL (NonEmpty . toList) (Leafy.fromList . getNonEmpty :: NonEmptyList Int -> Leafy.Tree Int))
+#if MIN_VERSION_base(4,9,0)
+        , testBatch (ord (\x -> oneof [pure x, arbitrary :: Gen (Lifted Leafy.Tree OrdA)]))
+        , testProperty "eq1" (eq1Prop (Leafy.Leaf undefined))
+        , testProperty "ord1" (ord1Prop (Leafy.Leaf undefined))
+#endif
+        , testProperty "foldl" (foldlProp             (Leafy.Leaf undefined))
+        , testProperty "foldr" (foldrProp'            (Leafy.Leaf undefined))
+        , testProperty "foldMap" (foldMapProp         (Leafy.Leaf undefined))
+        , testProperty "foldrStrict" (foldrStrictProp (Leafy.Leaf undefined))
+#if MIN_VERSION_base(4,8,0) || !MIN_VERSION_base(4,6,0)
+        , testProperty "foldlStrict" (foldlStrictProp (Leafy.Leaf undefined))
+#endif
         ]
     ]
 
@@ -271,6 +284,9 @@ instance (Show a, Eq a) => EqProp (Leafy.Tree a) where
     whenFail
       (putStrLn (Leafy.drawTree x ++ "\n/=\n" ++ Leafy.drawTree y))
       (x == y)
+
+instance (Eq a, Show a) => EqProp (NonEmptyList a) where
+  (=-=) = (===)
 --------------------------------------------------------------------------------
 -- Lifted
 --------------------------------------------------------------------------------
