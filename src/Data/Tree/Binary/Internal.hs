@@ -70,7 +70,7 @@ drawTree sf project = maybe nd root . project
     root (x, l, r) =
       maybe id (\t -> go t True id xlen) ls .
       showString xshw .
-      flip (foldr ($)) (endc ls rs) .
+      endc ls rs .
       nl . maybe id (\t -> go t False id xlen) rs
       where
         xshw = sf x
@@ -80,28 +80,26 @@ drawTree sf project = maybe nd root . project
 
     -- Item -> 
     -- Left result -> 
-    -- Right Result -> 
+    -- Right result -> 
     -- Incoming dir -> 
     -- Padding -> 
     -- Offset -> 
     -- Result
     node x ls rs up k i =
       maybe id (branch True) ls .
-      k . pad i . bool bl tl up . xshs . nl .
+      k .  pad i . bool bl tl up . showString xshw . endc ls rs . nl . 
       maybe id (branch False) rs
       where
         xshw = sf x
         xlen = length xshw
-        (j, eshs) = maybe (xlen, id) (\c -> (xlen + 1, c)) (endc ls rs)
-        xshs = showString xshw . eshs
         branch d fn
           | d == up = fn d (k . pad i) (xlen + 1)
           | otherwise = fn d (k . pad i . vm) xlen
 
-    endc Nothing Nothing = Nothing
-    endc (Just _) Nothing = Just br
-    endc Nothing (Just _) = Just tr
-    endc (Just _) (Just _) = Just rt
+    endc Nothing Nothing = id
+    endc (Just _) Nothing = br
+    endc Nothing (Just _) = tr
+    endc (Just _) (Just _) = rt
     
     pad 0 = id
     pad n = sp . pad (n - 1)
@@ -112,7 +110,7 @@ drawTree sf project = maybe nd root . project
     br = showChar '┘'
     tl = showChar '┌'
     tr = showChar '┐'
-    vm = showChar  '│'
+    vm = showChar '│'
     rt = showChar '┤'
     sp = showChar ' '
     nd = showChar '╼'
