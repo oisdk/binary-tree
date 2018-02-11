@@ -91,7 +91,7 @@ import Text.Read
 #if __GLASGOW_HASKELL__
 import Data.Data (Data)
 #if MIN_VERSION_base(4,10,0)
-import qualified Text.Read.Lex as Lex
+import Text.Read.Lex (expect)
 #endif
 #endif
 
@@ -251,7 +251,7 @@ instance Read1 Tree where
         prec
           10
           (expect' (Ident "Node") *> liftA3 Node (step rp) (step go) (step go))
-      expect' = lift . Lex.expect
+      expect' = lift . expect
   liftReadListPrec = liftReadListPrecDefault
 #else
   liftReadsPrec rp _ = go

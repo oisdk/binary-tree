@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 10aae8117e37286b5a5aa81de8d8c226115f3709b34544ca5e051ceee307367d
+-- hash: 42367734f7b4bc0b90b58a90d5fc1704b0045583e084b0a4cdade79392ad2b11
 
 name:           binary-tree
 version:        0.1.0.0
@@ -38,6 +38,7 @@ library
   exposed-modules:
       Data.Tree.Binary.Inorder
       Data.Tree.Binary.Internal
+      Data.Tree.Binary.Leafy
       Data.Tree.Binary.Preorder
   other-modules:
       Paths_binary_tree

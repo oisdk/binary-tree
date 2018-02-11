@@ -10,6 +10,7 @@ import Test.Framework as Framework
 import Test.Framework.Providers.QuickCheck2
 
 import qualified Data.Tree.Binary.Preorder as Preorder
+import qualified Data.Tree.Binary.Leafy as Leafy
 import qualified Data.Tree.Binary.Inorder as Inorder
 import Data.Tree.Binary.Internal
 
@@ -38,6 +39,9 @@ import Data.Foldable (Foldable(foldl, foldr, foldMap, foldl', foldr'))
 import Data.Foldable (Foldable(foldl, foldr, foldMap))
 #endif
 
+#if MIN_VERSION_base(4,9,0)
+import qualified Data.Semigroup as Semigroup
+#endif
 
 import Text.Read
 
@@ -194,6 +198,13 @@ main =
         , testProperty "foldlStrict" (foldlStrictProp Preorder.Leaf)
 #endif
         ]
+    , testGroup
+        "Leafy"
+        [ 
+#if MIN_VERSION_base(4,9,0)
+        testProperty "semigroup" (isAssoc ((Semigroup.<>) :: Leafy.Tree Int -> Leafy.Tree Int -> Leafy.Tree Int) )
+#endif
+        ]
     ]
 
 --------------------------------------------------------------------------------------------------
@@ -202,7 +213,6 @@ main =
 instance Arbitrary a => Arbitrary (Preorder.Tree a) where
   arbitrary = sized go
     where
-      go 0 = pure Preorder.Leaf
       go n
         | n <= 0 = pure Preorder.Leaf
         | otherwise =
@@ -217,7 +227,6 @@ instance Arbitrary a => Arbitrary (Preorder.Tree a) where
 instance Arbitrary a => Arbitrary (Inorder.Tree a) where
   arbitrary = sized go
     where
-      go 0 = pure Inorder.Leaf
       go n
         | n <= 0 = pure Inorder.Leaf
         | otherwise =
@@ -228,6 +237,19 @@ instance Arbitrary a => Arbitrary (Inorder.Tree a) where
   shrink (Inorder.Node l x r) =
     Inorder.Leaf :
     l : r : [Inorder.Node l' x' r' | (l', x', r') <- shrink (l, x, r)]
+
+instance Arbitrary a => Arbitrary (Leafy.Tree a) where
+  arbitrary = sized go
+    where
+      go n
+        | n <= 0 = fmap Leafy.Leaf arbitrary
+        | otherwise =
+          oneof [fmap Leafy.Leaf arbitrary, liftA2 (Leafy.:*:) sub sub]
+        where
+          sub = go (n `div` 2)
+  shrink (Leafy.Leaf x) = fmap Leafy.Leaf (shrink x)
+  shrink (l Leafy.:*: r) =
+    l : r : [l' Leafy.:*: r' | (l', r') <- shrink (l, r)]
 
 --------------------------------------------------------------------------------
 -- EqProp Instances
@@ -244,6 +266,11 @@ instance (Show a, Eq a) => EqProp (Inorder.Tree a) where
       (putStrLn (Inorder.drawTree x ++ "\n/=\n" ++ Inorder.drawTree y))
       (x == y)
 
+instance (Show a, Eq a) => EqProp (Leafy.Tree a) where
+  x =-= y =
+    whenFail
+      (putStrLn (Leafy.drawTree x ++ "\n/=\n" ++ Leafy.drawTree y))
+      (x == y)
 --------------------------------------------------------------------------------
 -- Lifted
 --------------------------------------------------------------------------------
