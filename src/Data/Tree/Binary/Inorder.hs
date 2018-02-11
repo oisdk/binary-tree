@@ -405,11 +405,11 @@ fromList xs = evalState (replicateA n u) xs
 --    └7
 --
 drawTree :: Show a => Tree a -> String
-drawTree = drawTreeWith show
+drawTree t = drawTreeWith show t ""
 
 -- | Pretty-print a tree with a custom show function.
 --
--- >>> putStr (drawTreeWith (const "─") (fromList [1..7]))
+-- >>> putStr (drawTreeWith (const "─") (fromList [1..7]) "")
 --    ┌─
 --  ┌─┤
 --  │ └─
@@ -417,7 +417,7 @@ drawTree = drawTreeWith show
 --  │ ┌─
 --  └─┤
 --    └─
-drawTreeWith :: (a -> String) -> Tree a -> String
+drawTreeWith :: (a -> String) -> Tree a -> ShowS
 drawTreeWith sf = Internal.drawTree sf unc foldTree'
   where
     unc Leaf = Nothing

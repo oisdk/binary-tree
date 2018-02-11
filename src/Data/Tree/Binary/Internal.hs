@@ -58,40 +58,37 @@ drawTree ::
   -> (t -> Maybe (a, t, t))
   -> (Base -> (a -> Maybe Base -> Maybe Base -> Base) -> t -> Base)
   -> t
-  -> String
+  -> ShowS
 drawTree sf unc ft t =
   case unc t of
-    Nothing -> "╼"
+    Nothing -> showChar '╼'
     Just (x', l', r') ->
-      (ft b f l' True id xlen' .
-       ln ((++) xshw' . (:) '┤') . ft b f r' False id xlen')
-        ""
+      ft b f l' True id xlen' .  showString xshw' . showChar '┤' . showChar '\n' . ft b f r' False id xlen'
       where xshw' = sf x'
             xlen' = length xshw'
-            b _ k _ = ln k
+            b _ k _ = k . showChar '\n'
             f x ls' rs' up k i
               | up =
                 ls (k . pad i) j .
-                ln (k . pad i . showChar '┌' . xshs) .
+                k . pad i . showChar '┌' . xshs . showChar '\n' .
                 rs (k . pad i . showChar '│') (j - 1)
               | otherwise =
                 ls (k . pad i . showChar '│') (j - 1) .
-                ln (k . pad i . showChar '└' . xshs) . 
+                k . pad i . showChar '└' . xshs . showChar '\n' . 
                 rs (k . pad i) j
               where
                 xshw = sf x
                 xlen = length xshw
                 endc Nothing  Nothing  = (xlen, id)
-                endc (Just _) Nothing  = (xlen + 1, (:) '┘')
-                endc Nothing  (Just _) = (xlen + 1, (:) '┐')
-                endc (Just _) (Just _) = (xlen + 1, (:) '┤')
+                endc (Just _) Nothing  = (xlen + 1, showChar '┘')
+                endc Nothing  (Just _) = (xlen + 1, showChar '┐')
+                endc (Just _) (Just _) = (xlen + 1, showChar '┤')
                 (j, eshs) = endc ls' rs'
-                xshs = (++) xshw . eshs
+                xshs = showString xshw . eshs
                 ls = maybe (\_ _ -> id) ($ True) ls'
                 rs = maybe (\_ _ -> id) ($ False) rs'
             pad 0 = id
             pad n = showChar ' ' . pad (n - 1)
-            ln e a = e ('\n' : a)
 {-# INLINE drawTree #-}
 
 type Base = (Bool -> ShowS -> Int -> ShowS) 
