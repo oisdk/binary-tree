@@ -91,7 +91,7 @@ import Text.Read.Lex (expect)
 #endif
 #endif
 
-import Control.Monad.Fix (MonadFix(mfix))
+import Control.Monad.Fix (MonadFix(mfix), fix)
 
 import qualified Data.Tree.Binary.Internal as Internal
 import Data.Tree.Binary.Internal (Identity(..), State)
@@ -158,12 +158,38 @@ instance Monad Tree where
   {-# INLINABLE (>>=) #-}
 #endif
 
+-- |
+-- <http://leventerkok.github.io/papers/erkok-thesis.pdf Erkok, Levent. “Value Recursion in Monadic Computations.” PhD Thesis, Oregon Health & Science University, 2002.>
 instance MonadFix Tree where
-  mfix f = a
-    where
-      a = f (leaf a)
-      leaf (Leaf x) = x
-      leaf (_ :*: _) = error "Data.Tree.Binary.Leafy.mfix: :*:"
+  mfix f =
+    case fix (f . unLeaf) of
+      Leaf x -> Leaf x
+      _ :*: _ -> mfix (lc . f) :*: mfix (rc . f)
+      where
+        unLeaf (Leaf x) = x
+        unLeaf _ =
+#if __GLASGOW_HASKELL__ >= 800
+          errorWithoutStackTrace
+#else
+          error
+#endif
+          "Data.Tree.Binary.Leafy.mfix: :*: encountered, expected Leaf"
+        lc (x :*: _) = x
+        lc _ =
+#if __GLASGOW_HASKELL__ >= 800
+          errorWithoutStackTrace
+#else
+          error
+#endif
+          "Data.Tree.Binary.Leafy.mfix: Leaf encountered, expected :*:"
+        rc (_ :*: y) = y
+        rc _ =
+#if __GLASGOW_HASKELL__ >= 800
+          errorWithoutStackTrace
+#else
+          error
+#endif
+          "Data.Tree.Binary.Leafy.mfix: Leaf encountered, expected :*:"
 
 #if MIN_VERSION_base(4,9,0)
 instance Semigroup.Semigroup (Tree a) where
