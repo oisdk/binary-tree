@@ -22,7 +22,7 @@
 -- Portability : portable
 --
 -- This module provides a simple preorder binary tree, as is needed
--- in several application. Instances, if sensible, are defined,
+-- in several applications. Instances, if sensible, are defined,
 -- and generally effort is made to keep the implementation as
 -- generic as possible.
 
