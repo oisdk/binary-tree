@@ -58,7 +58,7 @@ type Base = (Bool -> ShowS -> Int -> [String] -> [String])
 drawTree ::
      (a -> ShowS)
   -> (t -> Maybe (a, t, t))
-  -> (Base -> (a -> Base -> Base -> Base) -> t -> Base)
+  -> (Base -> (a -> Maybe Base -> Maybe Base -> Base) -> t -> Base)
   -> t
   -> String
 drawTree sf unc ft t =
@@ -66,14 +66,12 @@ drawTree sf unc ft t =
     Nothing -> "╼"
     Just (x', l', r') ->
       unlines
-        ((ft b f l' True id xlen' . (:) ('╾' : xshw') . ft b f r' False id xlen')
+        ((ft b f l' True id xlen' . (:) xshw' . ft b f r' False id xlen')
            [])
       where xshw' = sf x' "┤"
-            xlen' = length xshw'
-            b up k i
-              | up = (k (pad i "┌╼") :)
-              | otherwise = (k (pad i "└╼") :)
-            f x ls rs up k i
+            xlen' = length xshw' - 1
+            b up k i = (k "":)
+            f x (Just ls) (Just rs) up k i
               | up =
                 ls' (k . pad i) j .
                 ((k . pad i . showChar '┌') xshw :) .
@@ -86,6 +84,30 @@ drawTree sf unc ft t =
                 j = length xshw
                 ls' = ls True
                 rs' = rs False
+            f x (Just ls) Nothing up k i
+              | up =
+                ls' (k . pad i) j .
+                ((k . pad i . showChar '┌') xshw :)
+              | otherwise =
+                ls' (k . pad i . showChar '│') (j - 1) .
+                ((k . pad i . showChar '└') xshw :)
+              where
+                xshw = sf x "┘"
+                j = length xshw
+                ls' = ls True
+            f x Nothing (Just rs) up k i
+              | up =
+                ((k . pad i . showChar '┌') xshw :) .
+                (rs' (k . pad i . showChar '│') (j - 1))
+              | otherwise =
+                ((k . pad i . showChar '└') xshw :) . (rs' (k . pad i) j)
+              where
+                xshw = sf x "┐"
+                j = length xshw
+                rs' = rs False
+            f x Nothing Nothing up k i
+              | up = (k (pad i . showChar '┌' . sf x $ "") :)
+              | otherwise = (k (pad i . showChar '└' . sf x $ "") :)
             pad 0 = id
             pad n = showChar ' ' . pad (n - 1)
 
