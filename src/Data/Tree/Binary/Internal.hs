@@ -47,73 +47,77 @@ import Data.Functor.Identity (Identity(..))
 import Data.Functor (Functor(fmap))
 import Control.Applicative (Applicative((<*>), pure))
 
---------------------------------------------------------------------------------
--- Base Functor For Recursion Scheme
---------------------------------------------------------------------------------
-
-newtype TreeF a r = TreeF { runTreeF :: Maybe (a, r, r) }
-
-instance Functor (TreeF a) where
-  fmap f (TreeF Nothing) = TreeF Nothing
-  fmap f (TreeF (Just (x,l,r))) = TreeF (Just (x, f l, f r))
+#if MIN_VERSION_base(4,7,0)
+import Data.Bool (bool)
+#else
+bool :: a -> a -> Bool -> a
+bool f _ False = f
+bool _ t True  = t
+#endif
 
 --------------------------------------------------------------------------------
 -- Drawing Trees
 --------------------------------------------------------------------------------
 
--- | Given a folding function for a binary tree, draw the tree in a structured,
+-- | Given an uncons function for a binary tree, draw the tree in a structured,
 -- human-readable way.
-drawTree ::
-     (a -> String)
-  -> (t -> Maybe (a, t, t))
-  -> t
-  -> ShowS
-drawTree sf project = firstLevel . project
+drawTree :: (a -> String) -> (t -> Maybe (a, t, t)) -> t -> ShowS
+drawTree sf project = maybe nd root . project
   where
-    ft = maybe b ftc . project
-    ftc (x,l,r) = f x (fmap ftc (project l)) (fmap ftc (project r))
-    firstLevel Nothing = showChar '╼'
-    firstLevel (Just (x, l', r')) = ls . showString xshw . crn . showChar '\n' . rs where
-      xshw = sf x
-      xlen = length xshw
-      ls' = project l'
-      rs' = project r'
-      ls = maybe id (\t -> ftc t True  id xlen) ls'
-      rs = maybe id (\t -> ftc t False id xlen) rs'
-      crn = case (ls',rs') of 
-        (Nothing,Nothing) -> id
-        (Just _ ,Nothing) -> showChar '┘'
-        (Nothing,Just _ ) -> showChar '┐'
-        (Just _ ,Just _ ) -> showChar '┤'
-    b _ k _ = k . showChar '\n'
-    branch k i j d u =
-      maybe
-        id
-        (\fn ->
-           if d == u
-             then fn d (k . pad i) j
-             else fn d (k . pad i . showChar '│') (j - 1))
-    f x ls' rs' up k i = ls . k . pad i . corn . xshs . showChar '\n' . rs
+    go (x, l, r) = node x (fmap go (project l)) (fmap go (project r))
+
+    -- Root special case (no incoming direction)
+    root (x, l, r) =
+      maybe id (\t -> go t True id xlen) ls .
+      showString xshw .
+      flip (foldr ($)) (endc ls rs) .
+      nl . maybe id (\t -> go t False id xlen) rs
       where
-        corn
-          | up = showChar '┌'
-          | otherwise = showChar '└'
         xshw = sf x
         xlen = length xshw
-        endc Nothing Nothing = (xlen, id)
-        endc (Just _) Nothing = (xlen + 1 , showChar '┘')
-        endc Nothing (Just _) = (xlen + 1 , showChar '┐')
-        endc (Just _) (Just _) = (xlen + 1, showChar '┤')
-        (j, eshs) = endc ls' rs'
+        ls = project l
+        rs = project r
+
+    -- Item -> 
+    -- Left result -> 
+    -- Right Result -> 
+    -- Incoming dir -> 
+    -- Padding -> 
+    -- Offset -> 
+    -- Result
+    node x ls rs up k i =
+      maybe id (branch True) ls .
+      k . pad i . bool bl tl up . xshs . nl .
+      maybe id (branch False) rs
+      where
+        xshw = sf x
+        xlen = length xshw
+        (j, eshs) = maybe (xlen, id) (\c -> (xlen + 1, c)) (endc ls rs)
         xshs = showString xshw . eshs
-        ls = branch k i j True up ls'
-        rs = branch k i j False up rs'
+        branch d fn
+          | d == up = fn d (k . pad i) (xlen + 1)
+          | otherwise = fn d (k . pad i . vm) xlen
+
+    endc Nothing Nothing = Nothing
+    endc (Just _) Nothing = Just br
+    endc Nothing (Just _) = Just tr
+    endc (Just _) (Just _) = Just rt
+    
     pad 0 = id
-    pad n = showChar ' ' . pad (n - 1)
+    pad n = sp . pad (n - 1)
+
+    -- Characters
+    nl = showChar '\n'
+    bl = showChar '└'
+    br = showChar '┘'
+    tl = showChar '┌'
+    tr = showChar '┐'
+    vm = showChar  '│'
+    rt = showChar '┤'
+    sp = showChar ' '
+    nd = showChar '╼'
 
 {-# INLINE drawTree #-}
-
-type Base = (Bool -> ShowS -> Int -> ShowS) 
 
 --------------------------------------------------------------------------------
 -- State

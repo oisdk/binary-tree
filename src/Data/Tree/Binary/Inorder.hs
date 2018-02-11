@@ -417,6 +417,19 @@ drawTree t = drawTreeWith show t ""
 --  │ ┌─
 --  └─┤
 --    └─
+--
+-- >>> putStr (drawTreeWith id (singleton "abc") "")
+-- abc
+--
+-- >>> putStr (drawTreeWith id (Node (singleton "d") "abc" Leaf) "")
+--    ┌d
+-- abc┘
+--
+-- >>> putStr (drawTreeWith id (fromList ["abc", "d", "ef", "ghij"]) "")
+--     ┌abc
+--   ┌d┘
+-- ef┤
+--   └ghij
 drawTreeWith :: (a -> String) -> Tree a -> ShowS
 drawTreeWith sf = Internal.drawTree sf uncons'
   where
@@ -435,6 +448,12 @@ drawTreeWith sf = Internal.drawTree sf uncons'
 --  └6┤
 --    └7
 --
+-- >>> printTree (singleton 1)
+-- 1
+--
+-- >>> printTree (singleton 1 `mappend` singleton 2)
+-- 1┐
+--  └2
 printTree :: Show a => Tree a -> IO ()
 printTree = putStr . drawTree
 
