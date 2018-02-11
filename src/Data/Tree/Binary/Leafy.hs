@@ -91,7 +91,7 @@ import Text.Read.Lex (expect)
 #endif
 #endif
 
-import Control.Monad.Fix (MonadFix(..), fix)
+import Control.Monad.Fix (MonadFix(mfix))
 
 import qualified Data.Tree.Binary.Internal as Internal
 import Data.Tree.Binary.Internal (Identity(..), State)
@@ -159,22 +159,11 @@ instance Monad Tree where
 #endif
 
 instance MonadFix Tree where
-  mfix f = case fix (f . head') of
-    Leaf x -> Leaf x
-    xs :*: _ -> cons' (head' xs) (mfix (tail' . f))
+  mfix f = a
     where
-      head' (Leaf x) = x
-      head' (xs :*: _) = head' xs
-      cons' x xs = Leaf x :*: xs
-      tail' (Leaf _ :*: ys) = ys
-      tail' ((xs :*: ys) :*: zs) = (tail' xs :*: ys) :*: zs
-      tail' _ =
-#if __GLASGOW_HASKELL__ >= 800
-        errorWithoutStackTrace
-#else
-        error
-#endif
-        "Data.Tree.Binary.Leafy.mfix: Empty tree"
+      a = f (leaf a)
+      leaf (Leaf x) = x
+      leaf (_ :*: _) = error "Data.Tree.Binary.Leafy.mfix: :*:"
 
 #if MIN_VERSION_base(4,9,0)
 instance Semigroup.Semigroup (Tree a) where
@@ -406,7 +395,7 @@ printTree = putStr . drawTree
 
 -- $setup
 -- >>> import Test.QuickCheck
--- >>> import Data.Foldable (toList)
+-- >>> import Data.Foldable (toList, length)
 -- >>> import Prelude (Num(..), putStr)
 -- >>> import Data.Tree.Binary.Internal (evalState, State(..))
 -- >>> :{
