@@ -53,10 +53,8 @@ import Control.Applicative (Applicative((<*>), pure))
 
 -- | Given a folding function for a binary tree, draw the tree in a structured,
 -- human-readable way.
-type Base = (Bool -> ShowS -> Int -> [String] -> [String]) 
-
 drawTree ::
-     (a -> ShowS)
+     (a -> String)
   -> (t -> Maybe (a, t, t))
   -> (Base -> (a -> Maybe Base -> Maybe Base -> Base) -> t -> Base)
   -> t
@@ -65,51 +63,38 @@ drawTree sf unc ft t =
   case unc t of
     Nothing -> "╼"
     Just (x', l', r') ->
-      unlines
-        ((ft b f l' True id xlen' . (:) xshw' . ft b f r' False id xlen')
-           [])
-      where xshw' = sf x' "┤"
-            xlen' = length xshw' - 1
-            b up k i = (k "":)
-            f x (Just ls) (Just rs) up k i
+      (ft b f l' True id xlen' .
+       ln ((++) xshw' . (:) '┤') . ft b f r' False id xlen')
+        ""
+      where xshw' = sf x'
+            xlen' = length xshw'
+            b _ k _ = ln k
+            f x ls' rs' up k i
               | up =
-                ls' (k . pad i) j .
-                ((k . pad i . showChar '┌') xshw :) .
-                (rs' (k . pad i . showChar '│') (j - 1))
+                ls (k . pad i) j .
+                ln (k . pad i . showChar '┌' . xshs) .
+                rs (k . pad i . showChar '│') (j - 1)
               | otherwise =
-                ls' (k . pad i . showChar '│') (j - 1) .
-                ((k . pad i . showChar '└') xshw :) . (rs' (k . pad i) j)
+                ls (k . pad i . showChar '│') (j - 1) .
+                ln (k . pad i . showChar '└' . xshs) . 
+                rs (k . pad i) j
               where
-                xshw = sf x "┤"
-                j = length xshw
-                ls' = ls True
-                rs' = rs False
-            f x (Just ls) Nothing up k i
-              | up =
-                ls' (k . pad i) j .
-                ((k . pad i . showChar '┌') xshw :)
-              | otherwise =
-                ls' (k . pad i . showChar '│') (j - 1) .
-                ((k . pad i . showChar '└') xshw :)
-              where
-                xshw = sf x "┘"
-                j = length xshw
-                ls' = ls True
-            f x Nothing (Just rs) up k i
-              | up =
-                ((k . pad i . showChar '┌') xshw :) .
-                (rs' (k . pad i . showChar '│') (j - 1))
-              | otherwise =
-                ((k . pad i . showChar '└') xshw :) . (rs' (k . pad i) j)
-              where
-                xshw = sf x "┐"
-                j = length xshw
-                rs' = rs False
-            f x Nothing Nothing up k i
-              | up = (k (pad i . showChar '┌' . sf x $ "") :)
-              | otherwise = (k (pad i . showChar '└' . sf x $ "") :)
+                xshw = sf x
+                xlen = length xshw
+                endc Nothing  Nothing  = (xlen, id)
+                endc (Just _) Nothing  = (xlen + 1, (:) '┘')
+                endc Nothing  (Just _) = (xlen + 1, (:) '┐')
+                endc (Just _) (Just _) = (xlen + 1, (:) '┤')
+                (j, eshs) = endc ls' rs'
+                xshs = (++) xshw . eshs
+                ls = maybe (\_ _ -> id) ($ True) ls'
+                rs = maybe (\_ _ -> id) ($ False) rs'
             pad 0 = id
             pad n = showChar ' ' . pad (n - 1)
+            ln e a = e ('\n' : a)
+{-# INLINE drawTree #-}
+
+type Base = (Bool -> ShowS -> Int -> ShowS) 
 
 --------------------------------------------------------------------------------
 -- State
