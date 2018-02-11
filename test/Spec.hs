@@ -202,9 +202,9 @@ main =
         "Leafy"
         [ 
 #if MIN_VERSION_base(4,9,0)
-        testProperty "semigroup" (isAssoc ((Semigroup.<>) :: Leafy.Tree Int -> Leafy.Tree Int -> Leafy.Tree Int) )
+        testProperty "semigroup" (isAssoc ((Semigroup.<>) :: Leafy.Tree Int -> Leafy.Tree Int -> Leafy.Tree Int) ) ,
 #endif
-        , testProperty "toList . fromList" (inverseL (NonEmpty . toList) (Leafy.fromList . getNonEmpty :: NonEmptyList Int -> Leafy.Tree Int))
+         testProperty "toList . fromList" (inverseL (NonEmpty . toList) (Leafy.fromList . getNonEmpty :: NonEmptyList Int -> Leafy.Tree Int))
 #if MIN_VERSION_base(4,9,0)
         , testBatch (ord (\x -> oneof [pure x, arbitrary :: Gen (Lifted Leafy.Tree OrdA)]))
         , testProperty "eq1" (eq1Prop (Leafy.Leaf undefined))
