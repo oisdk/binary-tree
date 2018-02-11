@@ -54,14 +54,16 @@ import Prelude hiding
 #endif
   )
 
-import Control.Applicative (Applicative(..), liftA2)
+import Control.Applicative (Applicative(..), liftA2, (*>))
 
 import Control.DeepSeq (NFData(rnf))
 
 import Data.Monoid (Monoid(mappend))
 import Data.Functor (Functor(fmap, (<$)))
 
-#if MIN_VERSION_base(4,6,0)
+#if MIN_VERSION_base(4,8,0)
+import Data.Foldable (Foldable(foldl, foldr, foldMap, foldl', foldr', null))
+#elif MIN_VERSION_base(4,6,0)
 import Data.Foldable (Foldable(foldl, foldr, foldMap, foldl', foldr'))
 #else
 import Data.Foldable (Foldable(foldl, foldr, foldMap))
@@ -92,6 +94,10 @@ import Text.Read.Lex (expect)
 #endif
 
 import Control.Monad.Fix (MonadFix(mfix), fix)
+
+#if MIN_VERSION_base(4,4,0)
+import Control.Monad.Zip (MonadZip (..))
+#endif
 
 import qualified Data.Tree.Binary.Internal as Internal
 import Data.Tree.Binary.Internal (Identity(..), State)
@@ -152,6 +158,12 @@ instance Applicative Tree where
 #endif
 
 instance Monad Tree where
+#if !MIN_VERSION_base(4,8,0)
+  return = pure
+  {-# INLINE return #-}
+  (>>) = (*>)
+  {-# INLINE (>>) #-}
+#endif
   Leaf x >>= f = f x
   (xl :*: xr) >>= f = (xl >>= f) :*: (xr >>= f)
 #if __GLASGOW_HASKELL__
@@ -191,6 +203,22 @@ instance MonadFix Tree where
 #endif
           "Data.Tree.Binary.Leafy.mfix: Leaf encountered, expected :*:"
 
+#if MIN_VERSION_base(4,4,0)
+instance MonadZip Tree where
+  mzipWith f = go
+    where
+      go (Leaf x) (Leaf y) = Leaf (f x y)
+      go (xl :*: xr) (yl :*: yr) = go xl yl :*: go xr yr
+      go (Leaf x) (yl :*: yr) = fmap (f x) yl :*: fmap (f x) yr
+      go (xl :*: xr) (Leaf y) = fmap (flip f y) xl :*: fmap (flip f y) xr
+  munzip (Leaf (x, y)) = (Leaf x, Leaf y)
+  munzip (xs :*: ys) = (xl :*: yl, xr :*: yr)
+    where
+      (xl, xr) = munzip xs
+      (yl, yr) = munzip ys
+#endif
+
+
 #if MIN_VERSION_base(4,9,0)
 instance Semigroup.Semigroup (Tree a) where
   xs@(Leaf _) <> ys = xs :*: ys
@@ -228,6 +256,11 @@ instance Foldable Tree where
   {-# INLINABLE foldr' #-}
   {-# INLINABLE foldl' #-}
 #endif
+#endif
+
+#if MIN_VERSION_base(4,8,0)
+  null _ = False
+  {-# INLINE null #-}
 #endif
 
 instance Traversable Tree where
