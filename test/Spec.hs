@@ -154,7 +154,6 @@ foldlStrictProp _ xs' =
 testBatch :: TestBatch -> Framework.Test
 testBatch (name, tests) = testGroup name (map (uncurry testProperty) tests)
 
-
 main :: IO ()
 main =
   defaultMain
@@ -197,6 +196,12 @@ main =
 #if MIN_VERSION_base(4,8,0) || !MIN_VERSION_base(4,6,0)
         , testProperty "foldlStrict" (foldlStrictProp Preorder.Leaf)
 #endif
+        , testBatch
+            ( "applicative"
+            , [ (name, test)
+              | (name, test) <- snd $ applicative (undefined :: Inorder.Tree (A, B, C))
+              , name /= "homomorphism"
+              ])
         ]
     , testGroup
         "Leafy"
@@ -217,12 +222,14 @@ main =
 #if MIN_VERSION_base(4,8,0) || !MIN_VERSION_base(4,6,0)
         , testProperty "foldlStrict" (foldlStrictProp (Leafy.Leaf undefined))
 #endif
+        , testBatch (applicative (undefined :: Leafy.Tree (A, B, C)))
+        , testBatch (monad (undefined :: Leafy.Tree (A, B, C)))
         ]
     ]
 
---------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 -- Arbitrary Instances
---------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 instance Arbitrary a => Arbitrary (Preorder.Tree a) where
   arbitrary = sized go
     where
