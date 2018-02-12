@@ -154,6 +154,17 @@ foldlStrictProp _ xs' =
 testBatch :: TestBatch -> Framework.Test
 testBatch (name, tests) = testGroup name (map (uncurry testProperty) tests)
 
+showProp :: (Show1 f, Show (f A)) => f () -> f A -> Property
+showProp _ xs = show xs === show (Lifted xs)
+
+readProp ::
+     (Read1 f, Eq (f (f Int)), Show (f (f Int)), Read (f Int), EqProp (f (f Int)), Arbitrary (f (f Int)))
+  => f (f Int)
+  -> Property
+readProp p = inverseL reader show
+  where
+    reader str = runLifted (read str) `asTypeOf` p
+
 main :: IO ()
 main =
   defaultMain
@@ -179,6 +190,8 @@ main =
               | (name, test) <- snd $ applicative (undefined :: Preorder.Tree (A, B, C))
               , name /= "homomorphism"
               ])
+        , testProperty "show1" (showProp Preorder.Leaf)
+        , testProperty "read1" (readProp Preorder.Leaf)
         ]
     , testGroup
         "Inorder"
@@ -202,6 +215,8 @@ main =
               | (name, test) <- snd $ applicative (undefined :: Inorder.Tree (A, B, C))
               , name /= "homomorphism"
               ])
+        , testProperty "show1" (showProp Inorder.Leaf)
+        , testProperty "read1" (readProp Inorder.Leaf)
         ]
     , testGroup
         "Leafy"
@@ -224,6 +239,8 @@ main =
 #endif
         , testBatch (applicative (undefined :: Leafy.Tree (A, B, C)))
         , testBatch (monad (undefined :: Leafy.Tree (A, B, C)))
+        , testProperty "show1" (showProp (Leafy.Leaf ()))
+        , testProperty "read1" (readProp (Leafy.Leaf undefined))
         ]
     ]
 

@@ -247,7 +247,7 @@ instance Read1 Tree where
     where
       go =
         parens $
-        prec 10 (Leaf <$ expect' (Ident "Leaf")) +++
+        (Leaf <$ expect' (Ident "Leaf")) +++
         prec
           10
           (expect' (Ident "Node") *> liftA3 Node (step rp) (step go) (step go))
