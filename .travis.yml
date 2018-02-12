@@ -2,7 +2,7 @@ language: haskell
 matrix:
   include:
   - ghc: "7.2"
-    script: cabal configure --enable-tests && cabal build && cabal test binary-tree-test
+    script: cabal configure --enable-tests --constraint=doctest==0.13 && cabal build && cabal test binary-tree-test
   - ghc: "7.4"
     script: cabal configure --enable-tests && cabal build && cabal test binary-tree-test
   - ghc: "7.6"
