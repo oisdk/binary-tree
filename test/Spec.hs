@@ -151,9 +151,11 @@ foldlStrictProp _ xs' =
       | x <- ys
       ]
 
-testBatch :: TestBatch -> Framework.Test
-testBatch (name, tests) = testGroup name (map (uncurry testProperty) tests)
+--------------------------------------------------------------------------------
+-- Read and Show
+--------------------------------------------------------------------------------
 
+#if MIN_VERSION_base(4,9,0)
 showProp :: (Show1 f, Show (f A)) => f () -> f A -> Property
 showProp _ xs = show xs === show (Lifted xs)
 
@@ -164,6 +166,10 @@ readProp ::
 readProp p = inverseL reader show
   where
     reader str = runLifted (read str) `asTypeOf` p
+#endif
+
+testBatch :: TestBatch -> Framework.Test
+testBatch (name, tests) = testGroup name (map (uncurry testProperty) tests)
 
 main :: IO ()
 main =
@@ -176,6 +182,8 @@ main =
         , testBatch (ord (\x -> oneof [pure x, arbitrary :: Gen (Lifted Preorder.Tree OrdA)]))
         , testProperty "eq1" (eq1Prop Preorder.Leaf)
         , testProperty "ord1" (ord1Prop Preorder.Leaf)
+        , testProperty "show1" (showProp Preorder.Leaf)
+        , testProperty "read1" (readProp Preorder.Leaf)
 #endif
         , testProperty "foldl" (foldlProp Preorder.Leaf)
         , testProperty "foldr'" (foldrProp' Preorder.Leaf)
@@ -184,14 +192,15 @@ main =
 #if MIN_VERSION_base(4,8,0) || !MIN_VERSION_base(4,6,0)
         , testProperty "foldlStrict" (foldlStrictProp Preorder.Leaf)
 #endif
+        , testBatch (functor (undefined :: Preorder.Tree (A, B, C)))
         , testBatch
             ( "applicative"
             , [ (name, test)
               | (name, test) <- snd $ applicative (undefined :: Preorder.Tree (A, B, C))
               , name /= "homomorphism"
               ])
-        , testProperty "show1" (showProp Preorder.Leaf)
-        , testProperty "read1" (readProp Preorder.Leaf)
+        , testBatch (traversable (undefined :: Preorder.Tree (A, B, [Int])))
+        , testBatch (alternative (undefined :: Preorder.Tree A))
         ]
     , testGroup
         "Inorder"
@@ -201,6 +210,8 @@ main =
         , testBatch (ord (\x -> oneof [pure x, arbitrary :: Gen (Lifted Inorder.Tree OrdA)]))
         , testProperty "eq1" (eq1Prop Inorder.Leaf)
         , testProperty "ord1" (ord1Prop Inorder.Leaf)
+        , testProperty "show1" (showProp Inorder.Leaf)
+        , testProperty "read1" (readProp Inorder.Leaf)
 #endif
         , testProperty "foldl" (foldlProp Inorder.Leaf)
         , testProperty "foldr" (foldrProp' Inorder.Leaf)
@@ -215,8 +226,9 @@ main =
               | (name, test) <- snd $ applicative (undefined :: Inorder.Tree (A, B, C))
               , name /= "homomorphism"
               ])
-        , testProperty "show1" (showProp Inorder.Leaf)
-        , testProperty "read1" (readProp Inorder.Leaf)
+        , testBatch (functor (undefined :: Inorder.Tree (A, B, C)))
+        , testBatch (traversable (undefined :: Inorder.Tree (A, B, [Int])))
+        , testBatch (alternative (undefined :: Inorder.Tree A))
         ]
     , testGroup
         "Leafy"
@@ -229,6 +241,8 @@ main =
         , testBatch (ord (\x -> oneof [pure x, arbitrary :: Gen (Lifted Leafy.Tree OrdA)]))
         , testProperty "eq1" (eq1Prop (Leafy.Leaf undefined))
         , testProperty "ord1" (ord1Prop (Leafy.Leaf undefined))
+        , testProperty "show1" (showProp (Leafy.Leaf ()))
+        , testProperty "read1" (readProp (Leafy.Leaf undefined))
 #endif
         , testProperty "foldl" (foldlProp             (Leafy.Leaf undefined))
         , testProperty "foldr" (foldrProp'            (Leafy.Leaf undefined))
@@ -237,10 +251,12 @@ main =
 #if MIN_VERSION_base(4,8,0) || !MIN_VERSION_base(4,6,0)
         , testProperty "foldlStrict" (foldlStrictProp (Leafy.Leaf undefined))
 #endif
+        , testBatch (functor (undefined :: Leafy.Tree (A, B, C)))
         , testBatch (applicative (undefined :: Leafy.Tree (A, B, C)))
         , testBatch (monad (undefined :: Leafy.Tree (A, B, C)))
-        , testProperty "show1" (showProp (Leafy.Leaf ()))
-        , testProperty "read1" (readProp (Leafy.Leaf undefined))
+        , testBatch (monadFunctor (undefined :: Leafy.Tree (A, B)))
+        , testBatch (monadApplicative (undefined :: Leafy.Tree (A, B)))
+        , testBatch (traversable (undefined :: Leafy.Tree (A, B, [Int])))
         ]
     ]
 
