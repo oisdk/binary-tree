@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 39078ef2b70140740cb8b64d38c63ccf6590e6b811039d8a001a63a88e65ca7f
+-- hash: 2148f3fe33f88301bbdefa9d7dab377a1e7cb8a992e53c85ce8b671ca3b5a3f7
 
 name:           binary-tree
 version:        0.1.0.0
@@ -28,10 +28,12 @@ source-repository head
 library
   hs-source-dirs:
       src
-  ghc-options: -Wall -Wcompat -fwarn-incomplete-record-updates -fwarn-incomplete-uni-patterns -fwarn-redundant-constraints
+  ghc-options: -Wall -fwarn-incomplete-record-updates -fwarn-incomplete-uni-patterns
   build-depends:
       base >=4.0 && <5
     , deepseq
+  if impl(ghc >= 8.0)
+    ghc-options: -fwarn-redundant-constraints -Wcompat
   if impl(ghc)
     build-depends:
         ghc-prim
@@ -49,7 +51,7 @@ test-suite binary-tree-test
   main-is: Spec.hs
   hs-source-dirs:
       test
-  ghc-options: -Wall -Wcompat -fwarn-incomplete-record-updates -fwarn-incomplete-uni-patterns -fwarn-redundant-constraints -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -Wall -fwarn-incomplete-record-updates -fwarn-incomplete-uni-patterns -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       ChasingBottoms
     , HUnit
@@ -59,6 +61,8 @@ test-suite binary-tree-test
     , checkers
     , test-framework
     , test-framework-quickcheck2
+  if impl(ghc >= 8.0)
+    ghc-options: -fwarn-redundant-constraints -Wcompat
   other-modules:
       Paths_binary_tree
   default-language: Haskell2010
@@ -68,12 +72,14 @@ test-suite doctests
   main-is: doctests.hs
   hs-source-dirs:
       doctest
-  ghc-options: -Wall -Wcompat -fwarn-incomplete-record-updates -fwarn-incomplete-uni-patterns -fwarn-redundant-constraints -threaded
+  ghc-options: -Wall -fwarn-incomplete-record-updates -fwarn-incomplete-uni-patterns -threaded
   build-depends:
       QuickCheck >=2.7.1
     , base >=4.0 && <5
     , binary-tree
     , doctest
+  if impl(ghc >= 8.0)
+    ghc-options: -fwarn-redundant-constraints -Wcompat
   other-modules:
       Paths_binary_tree
   default-language: Haskell2010
@@ -83,12 +89,14 @@ benchmark bench
   main-is: bench.hs
   hs-source-dirs:
       bench
-  ghc-options: -Wall -Wcompat -fwarn-incomplete-record-updates -fwarn-incomplete-uni-patterns -fwarn-redundant-constraints -threaded -rtsopts -with-rtsopts=-N -O2
+  ghc-options: -Wall -fwarn-incomplete-record-updates -fwarn-incomplete-uni-patterns -threaded -rtsopts -with-rtsopts=-N -O2
   build-depends:
       base >=4.0 && <5
     , binary-tree
     , criterion
     , random
+  if impl(ghc >= 8.0)
+    ghc-options: -fwarn-redundant-constraints -Wcompat
   other-modules:
       Paths_binary_tree
   default-language: Haskell2010
