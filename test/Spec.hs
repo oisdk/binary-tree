@@ -1,10 +1,10 @@
 {-# LANGUAGE CPP #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 import Test.QuickCheck
 import Test.QuickCheck.Poly
 import Test.QuickCheck.Checkers
 import Test.QuickCheck.Classes
-import Test.QuickCheck.Function
 import Test.ChasingBottoms
 import Test.Framework as Framework
 import Test.Framework.Providers.QuickCheck2
@@ -12,7 +12,6 @@ import Test.Framework.Providers.QuickCheck2
 import qualified Data.Tree.Binary.Preorder as Preorder
 import qualified Data.Tree.Binary.Leafy as Leafy
 import qualified Data.Tree.Binary.Inorder as Inorder
-import Data.Tree.Binary.Internal
 
 import Control.Applicative
 import Data.Foldable
@@ -31,7 +30,7 @@ import Prelude hiding
 #endif
   )
 
-import Data.Functor (Functor(fmap, (<$)))
+import Data.Functor (Functor(fmap))
 
 #if MIN_VERSION_base(4,6,0)
 import Data.Foldable (Foldable(foldl, foldr, foldMap, foldl', foldr'))
@@ -116,15 +115,15 @@ foldrStrictProp _ xs' =
     | b
     -- error "too strict",
          <-
-        [0]
-    , (i, c) <- zip [-1 ..] fns
+        [0 :: Int]
+    , (i, c) <- zip [(-1 :: Int) ..] fns
     ]
   where
     (n, xs) = indexed xs'
     ys = [0 .. n - 1]
     fns =
       const :
-      [ \y b ->
+      [ \y _ ->
         if x == y
           then error "too strict"
           else y
@@ -137,14 +136,14 @@ foldlStrictProp _ xs' =
     [ counterexample (unlines [show xs, show ys, show i]) $
     isBottom (foldl' c b xs) == isBottom (foldl' c b ys)
     | b <- [error "too strict", 0]
-    , (i, c) <- zip [-1 ..] fns
+    , (i, c) <- zip [(-1 :: Int) ..] fns
     ]
   where
     (n, xs) = indexed xs'
-    ys = [0 .. n - 1]
+    ys = [(0 :: Int) .. n - 1]
     fns =
       const id :
-      [ \b y ->
+      [ \_ y ->
         if x == y
           then error "too strict"
           else y
@@ -160,7 +159,7 @@ showProp :: (Show1 f, Show (f A)) => f () -> f A -> Property
 showProp _ xs = show xs === show (Lifted xs)
 
 readProp ::
-     (Read1 f, Eq (f (f Int)), Show (f (f Int)), Read (f Int), EqProp (f (f Int)), Arbitrary (f (f Int)))
+     (Read1 f, Show (f (f Int)), Read (f Int), EqProp (f (f Int)), Arbitrary (f (f Int)))
   => f (f Int)
   -> Property
 readProp p = inverseL reader show
@@ -186,6 +185,7 @@ main =
         , testProperty "read1" (readProp Preorder.Leaf)
 #endif
         , testProperty "foldl" (foldlProp Preorder.Leaf)
+        , testProperty "foldl'" (foldlProp' Preorder.Leaf)
         , testProperty "foldr'" (foldrProp' Preorder.Leaf)
         , testProperty "foldMap" (foldMapProp Preorder.Leaf)
         , testProperty "foldrStrict" (foldrStrictProp Preorder.Leaf)
@@ -214,7 +214,8 @@ main =
         , testProperty "read1" (readProp Inorder.Leaf)
 #endif
         , testProperty "foldl" (foldlProp Inorder.Leaf)
-        , testProperty "foldr" (foldrProp' Inorder.Leaf)
+        , testProperty "foldl'" (foldlProp' Inorder.Leaf)
+        , testProperty "foldr'" (foldrProp' Inorder.Leaf)
         , testProperty "foldMap" (foldMapProp Inorder.Leaf)
         , testProperty "foldrStrict" (foldrStrictProp Inorder.Leaf)
 #if MIN_VERSION_base(4,8,0) || !MIN_VERSION_base(4,6,0)
@@ -245,6 +246,7 @@ main =
         , testProperty "read1" (readProp (Leafy.Leaf undefined))
 #endif
         , testProperty "foldl" (foldlProp             (Leafy.Leaf undefined))
+        , testProperty "foldl'" (foldlProp'             (Leafy.Leaf undefined))
         , testProperty "foldr" (foldrProp'            (Leafy.Leaf undefined))
         , testProperty "foldMap" (foldMapProp         (Leafy.Leaf undefined))
         , testProperty "foldrStrict" (foldrStrictProp (Leafy.Leaf undefined))

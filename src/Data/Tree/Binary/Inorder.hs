@@ -11,7 +11,6 @@
 {-# LANGUAGE Safe #-}
 #endif
 
-
 -- | 
 -- Module      : Data.Tree.Binary.Inorder
 -- Description : A simple, generic, inorder binary tree.
