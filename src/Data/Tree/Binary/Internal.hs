@@ -74,7 +74,7 @@ runDrawing (Padding i xs) st = pad i (runDrawing xs st)
 -- | Given an uncons function for a binary tree, draw the tree in a structured,
 -- human-readable way.
 drawTree :: (a -> String) -> (t -> Maybe (a, t, t)) -> t -> ShowS
-drawTree sf project = runDrawing . maybe (nd Nil) root . project
+drawTree sf project = runDrawing . maybe (OpChar '╼' Nil) root . project
   where
     go (x, l, r) = node x (project l) (project r)
 
@@ -83,7 +83,7 @@ drawTree sf project = runDrawing . maybe (nd Nil) root . project
       maybeAp (\t -> go t True id xlen) ls $
       Item xshw $
       endc ls rs $
-      nl $ maybeAp (\t -> go t False id xlen) rs $ Nil
+      OpChar '\n' $ maybeAp (\t -> go t False id xlen) rs $ Nil
       where
         xshw = sf x
         xlen = length xshw
@@ -99,21 +99,23 @@ drawTree sf project = runDrawing . maybe (nd Nil) root . project
     -- Result
     node x ls rs up k i b =
       maybeAp (branch True) ls $
-      k $ pad i $ bool bl tl up $ Item xshw $ endc ls rs $ nl $ 
-      maybeAp (branch False) rs b
+      k $
+      pad i $
+      bool (OpChar '└') (OpChar '┌') up $
+      Item xshw $ endc ls rs $ OpChar '\n' $ maybeAp (branch False) rs b
       where
         xshw = sf x
         xlen = length xshw
         branch d fn
           | d == up = go fn d (k . pad i) (xlen + 1)
-          | otherwise = go fn d (k . pad i . vm) xlen
+          | otherwise = go fn d (k . pad i . OpChar '│') xlen
         {-# INLINE branch #-}
     {-# INLINE node #-}
 
     endc Nothing  Nothing  b = b
-    endc (Just _) Nothing  b = br b
-    endc Nothing  (Just _) b = tr b
-    endc (Just _) (Just _) b = rt b
+    endc (Just _) Nothing  b = OpChar '┘' b
+    endc Nothing  (Just _) b = OpChar '┐' b
+    endc (Just _) (Just _) b = OpChar '┤' b
     {-# INLINE endc #-}
     
     pad i (Padding j xs) = Padding (i+j) xs
@@ -123,16 +125,6 @@ drawTree sf project = runDrawing . maybe (nd Nil) root . project
     maybeAp _ Nothing y = y
     maybeAp f (Just x) y = f x y
     {-# INLINE maybeAp #-}
-
-    -- Characters
-    nl = OpChar '\n'
-    bl = OpChar '└'
-    br = OpChar '┘'
-    tl = OpChar '┌'
-    tr = OpChar '┐'
-    vm = OpChar '│'
-    rt = OpChar '┤'
-    nd = OpChar '╼'
 
 {-# INLINE drawTree #-}
 

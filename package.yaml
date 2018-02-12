@@ -25,9 +25,9 @@ dependencies:
 ghc-options:
 - -Wall
 - -Wcompat
-- -Wincomplete-record-updates
-- -Wincomplete-uni-patterns
-- -Wredundant-constraints
+- -fwarn-incomplete-record-updates
+- -fwarn-incomplete-uni-patterns
+- -fwarn-redundant-constraints
 
 library:
   source-dirs: src
