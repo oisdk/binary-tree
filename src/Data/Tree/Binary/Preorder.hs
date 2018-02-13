@@ -46,10 +46,14 @@ module Data.Tree.Binary.Preorder
   , printTree
   ) where
 
-import           Prelude                   hiding (Applicative (..),
-                                            Foldable (..), Functor (..), Monoid,
-                                            foldMap, foldl, foldr, replicate,
-                                            (<$>))
+import Prelude hiding
+  ( replicate
+#if MIN_VERSION_base(4,8,0)
+  ,Functor(..),Foldable(..),Applicative(..), (<$>), foldMap, Monoid
+#else
+  ,foldr,foldl
+#endif
+  )
 
 import           Data.List                 (length)
 

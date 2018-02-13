@@ -39,9 +39,11 @@ module Data.Tree.Binary.Internal
     -- * Reimplementations for older GHCs
   , Identity(..)
   ) where
-
-import           Prelude               hiding (Applicative, Functor (..),
-                                        Monoid, foldMap, (<$>))
+import Prelude hiding (
+#if MIN_VERSION_base(4,8,0)
+  Functor(..),Applicative, (<$>), foldMap, Monoid
+#endif
+  )
 
 #if MIN_VERSION_base(4,8,0)
 import           Data.Functor.Identity (Identity (..))

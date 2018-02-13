@@ -12,7 +12,7 @@
 #endif
 
 
--- | 
+-- |
 -- Module      : Data.Tree.Binary.Leafy
 -- Description : A simple, generic, leafy binary tree.
 -- Copyright   : (c) Donnacha Oisín Kidney, 2018
