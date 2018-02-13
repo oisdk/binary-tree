@@ -28,10 +28,16 @@
 --
 -- This module exports some utility functions common to both tree modules.
 module Data.Tree.Binary.Internal
-  ( drawTree
-  , Identity(..)
+  ( -- * Drawing Trees 
+    Drawing(..)
+  , toDrawing
+  , runDrawing
+  , drawTree
+    -- * State
   , State(..)
   , evalState
+    -- * Reimplementations for older GHCs
+  , Identity(..)
   ) where
 
 import Prelude hiding (
@@ -56,66 +62,81 @@ bool _ t True  = t
 -- Drawing Trees
 --------------------------------------------------------------------------------
 
+-- | An abstract representation of a textual drawing of a tree.
 data Drawing
   = Nil
-  | OpChar {-# UNPACK #-} !Char !Drawing
+  | NewLine     !Drawing
+  | BottomLeft  !Drawing
+  | BottomRight !Drawing
+  | TopLeft     !Drawing
+  | TopRight    !Drawing
+  | Vert        !Drawing
+  | Split       !Drawing
+  | Item !String Drawing
   | Padding {-# UNPACK #-} !Int !Drawing
-  | Item String Drawing
 
+-- | A function to convert a drawing to a string.
 runDrawing :: Drawing -> ShowS
-runDrawing Nil st = st
-runDrawing (OpChar x xs) st = x : runDrawing xs st
-runDrawing (Item x xs) st = x ++ runDrawing xs st
-runDrawing (Padding i xs) st = pad i (runDrawing xs st) 
+runDrawing Nil = showChar '╼'
+runDrawing ys = go ys
   where
+    go Nil st = st
+    go (NewLine     xs) st = '\n' : go xs st
+    go (BottomLeft  xs) st = '└' : go xs st
+    go (BottomRight xs) st = '┘' : go xs st
+    go (TopLeft     xs) st = '┌' : go xs st
+    go (TopRight    xs) st = '┐' : go xs st
+    go (Vert        xs) st = '│' : go xs st
+    go (Split       xs) st = '┤' : go xs st
+    go (Item x      xs) st = x ++ go xs st
+    go (Padding i   xs) st = pad i (go xs st)
     pad 0 = id
     pad n = showChar ' ' . pad (n-1)
+{-# INLINE runDrawing #-}
 
 -- | Given an uncons function for a binary tree, draw the tree in a structured,
 -- human-readable way.
 drawTree :: (a -> String) -> (t -> Maybe (a, t, t)) -> t -> ShowS
-drawTree sf project = runDrawing . maybe (OpChar '╼' Nil) root . project
+drawTree sf project = runDrawing . toDrawing sf project
+{-# INLINE drawTree #-}
+
+-- | Convert a tree to the Drawing type. This function is exposed so that users
+-- may replace the call to 'runDrawing' in 'drawTree' with a more efficient
+-- implementation that could use (for example) 'Text'.
+toDrawing :: (a -> String) -> (t -> Maybe (a, t, t)) -> t -> Drawing
+toDrawing sf project = maybe Nil root . project
   where
-    go (x, l, r) = node x (project l) (project r)
+    go dir k len (x, l, r) = node dir len x (project l) (project r) k
 
     -- Root special case (no incoming direction)
     root (x, l, r) =
-      maybeAp (\t -> go t True id xlen) ls $
-      Item xshw $
-      endc ls rs $
-      OpChar '\n' $ maybeAp (\t -> go t False id xlen) rs $ Nil
+      maybeAp (go True id xlen) ls $
+      Item xshw $ endc ls rs $ NewLine $ maybeAp (go False id xlen) rs Nil
       where
         xshw = sf x
         xlen = length xshw
         ls = project l
         rs = project r
 
-    -- Item -> 
-    -- Left result -> 
-    -- Right result -> 
-    -- Incoming dir -> 
-    -- Padding -> 
-    -- Offset -> 
-    -- Result
-    node x ls rs up k i b =
+    node up i x ls rs k b =
       maybeAp (branch True) ls $
       k $
       pad i $
-      bool (OpChar '└') (OpChar '┌') up $
-      Item xshw $ endc ls rs $ OpChar '\n' $ maybeAp (branch False) rs b
+      bool BottomLeft TopLeft up $
+      Item xshw $ endc ls rs $ NewLine $ maybeAp (branch False) rs b
       where
         xshw = sf x
         xlen = length xshw
-        branch d fn
-          | d == up = go fn d (k . pad i) (xlen + 1)
-          | otherwise = go fn d (k . pad i . OpChar '│') xlen
+        branch d
+          | d == up = go d (k . pad i) (xlen + 1)
+          | otherwise = go d (k . pad i . Vert) xlen
         {-# INLINE branch #-}
     {-# INLINE node #-}
 
     endc Nothing  Nothing  b = b
-    endc (Just _) Nothing  b = OpChar '┘' b
-    endc Nothing  (Just _) b = OpChar '┐' b
-    endc (Just _) (Just _) b = OpChar '┤' b
+    endc (Just _) Nothing  b = BottomRight b
+    endc Nothing  (Just _) b = TopRight b
+    endc (Just _) (Just _) b = Split b
     {-# INLINE endc #-}
     
     pad i (Padding j xs) = Padding (i+j) xs
@@ -125,8 +146,7 @@ drawTree sf project = runDrawing . maybe (OpChar '╼' Nil) root . project
     maybeAp _ Nothing y = y
     maybeAp f (Just x) y = f x y
     {-# INLINE maybeAp #-}
-
-{-# INLINE drawTree #-}
+{-# INLINE toDrawing #-}
 
 --------------------------------------------------------------------------------
 -- State
