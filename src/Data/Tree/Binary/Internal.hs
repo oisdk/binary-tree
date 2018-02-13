@@ -1,7 +1,7 @@
-{-# LANGUAGE CPP #-}
+{-# LANGUAGE CPP  #-}
 
 #if __GLASGOW_HASKELL__ >= 703
-{-# LANGUAGE Safe #-}
+{-# LANGUAGE Safe #-}
 #endif
 
 -- |
@@ -13,22 +13,22 @@
 -- Portability : portable
 --
 -- = WARNING
--- 
+--
 -- This module is considered __internal__.
--- 
+--
 -- The Package Versioning Policy __does not apply__.
--- 
+--
 -- This contents of this module may change __in any way whatsoever__
 -- and __without any warning__ between minor versions of this package.
--- 
+--
 -- Authors importing this module are expected to track development
 -- closely.
--- 
+--
 -- = Description
 --
 -- This module exports some utility functions common to both tree modules.
 module Data.Tree.Binary.Internal
-  ( -- * Drawing Trees 
+  ( -- * Drawing Trees
     Drawing(..)
   , toDrawing
   , runDrawing
@@ -40,18 +40,15 @@ module Data.Tree.Binary.Internal
   , Identity(..)
   ) where
 
-import Prelude hiding (
-#if MIN_VERSION_base(4,8,0)
-  Functor(..),Applicative, (<$>), foldMap, Monoid
-#endif
-  )
+import           Prelude               hiding (Applicative, Functor (..),
+                                        Monoid, foldMap, (<$>))
 
 #if MIN_VERSION_base(4,8,0)
-import Data.Functor.Identity (Identity(..))
+import           Data.Functor.Identity (Identity (..))
 #endif
 
-import Data.Functor (Functor(fmap))
-import Control.Applicative (Applicative((<*>), pure))
+import           Control.Applicative   (Applicative (pure, (<*>)))
+import           Data.Functor          (Functor (fmap))
 
 bool :: a -> a -> Bool -> a
 bool f _ False = f
@@ -77,10 +74,10 @@ data Drawing
 
 -- | A function to convert a drawing to a string.
 runDrawing :: Drawing -> ShowS
-runDrawing Nil = showChar '╼'
+runDrawing Nil = showString "╼\n"
 runDrawing ys = go ys
   where
-    go Nil st = st
+    go Nil st              = st
     go (NewLine     xs) st = '\n' : go xs st
     go (BottomLeft  xs) st = '└' : go xs st
     go (BottomRight xs) st = '┘' : go xs st
@@ -93,6 +90,7 @@ runDrawing ys = go ys
     pad 0 = id
     pad n = showChar ' ' . pad (n-1)
 {-# INLINE runDrawing #-}
+
 
 -- | Given an uncons function for a binary tree, draw the tree in a structured,
 -- human-readable way.
@@ -138,12 +136,12 @@ toDrawing sf project = maybe Nil root . project
     endc Nothing  (Just _) b = TopRight b
     endc (Just _) (Just _) b = Split b
     {-# INLINE endc #-}
-    
+
     pad i (Padding j xs) = Padding (i+j) xs
-    pad i xs = Padding i xs
+    pad i xs             = Padding i xs
     {-# INLINE pad #-}
 
-    maybeAp _ Nothing y = y
+    maybeAp _ Nothing y  = y
     maybeAp f (Just x) y = f x y
     {-# INLINE maybeAp #-}
 {-# INLINE toDrawing #-}

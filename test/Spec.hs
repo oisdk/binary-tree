@@ -65,6 +65,48 @@ ord1Prop p =
   forAllShrink arbitrary shrink $ \xs ->
     forAllShrink (oneof [pure xs, arbitrary]) shrink $ \ys ->
       (Lifted xs `compare` Lifted ys) === ((xs `asTypeOf` p) `compare` ys)
+
+showProp :: (Show1 f, Show (f A)) => f () -> f A -> Property
+showProp _ xs = show xs === show (Lifted xs)
+
+readProp ::
+     (Read1 f, Show (f (f Int)), Read (f Int), EqProp (f (f Int)), Arbitrary (f (f Int)))
+  => f (f Int)
+  -> Property
+readProp p = inverseL reader show
+  where
+    reader str = runLifted (read str) `asTypeOf` p
+
+liftedProperties
+    :: (Ord (f OrdA)
+       ,Ord1 f
+       ,Show (f OrdA)
+       ,Arbitrary (f OrdA)
+       ,Show1 f
+       ,Arbitrary (f A)
+       ,Show (f A)
+       ,Read1 f
+       ,Show (f (f Int))
+       ,Read (f Int)
+       ,EqProp (f (f Int))
+       ,Arbitrary (f (f Int))
+       ,EqProp (f OrdA))
+    => (OrdA -> f OrdA) -> Framework.Test
+liftedProperties t =
+    testGroup
+        "Lifted Classes"
+        [ testBatch (ord (\x -> oneof [pure x, arbitrary `asTypeOf` conv3 t]))
+        , testProperty "eq1" (eq1Prop (t undefined))
+        , testProperty "ord1 consistency" (ord1Prop (t undefined))
+        , testProperty "show1" (showProp (conv t))
+        , testProperty "read1" (readProp (conv2 t))]
+  where
+    conv :: (OrdA -> f OrdA) -> f ()
+    conv = undefined
+    conv2 :: (OrdA -> f OrdA) -> f (f Int)
+    conv2 = undefined
+    conv3 :: (OrdA -> f OrdA) -> Gen (Lifted f OrdA)
+    conv3 = undefined
 #endif
 
 --------------------------------------------------------------------------------
@@ -150,22 +192,46 @@ foldlStrictProp _ xs' =
       | x <- ys
       ]
 
---------------------------------------------------------------------------------
--- Read and Show
---------------------------------------------------------------------------------
-
-#if MIN_VERSION_base(4,9,0)
-showProp :: (Show1 f, Show (f A)) => f () -> f A -> Property
-showProp _ xs = show xs === show (Lifted xs)
-
-readProp ::
-     (Read1 f, Show (f (f Int)), Read (f Int), EqProp (f (f Int)), Arbitrary (f (f Int)))
-  => f (f Int)
-  -> Property
-readProp p = inverseL reader show
-  where
-    reader str = runLifted (read str) `asTypeOf` p
+foldProperties
+    :: (Arbitrary (f A)
+       ,Show (f A)
+       ,Show (f Int)
+       ,Arbitrary (f ())
+       ,Show (f ())
+       ,Traversable f)
+    => f () -> Framework.Test
+foldProperties p =
+    testGroup
+        "Folds"
+        [ testProperty "foldl" (foldlProp p)
+        , testProperty "foldr'" (foldrProp' p)
+        , testProperty "foldl'" (foldlProp' p)
+        , testProperty "foldMap" (foldMapProp p)
+        , testProperty "foldrStrict" (foldrStrictProp p)
+#if MIN_VERSION_base(4,8,0) || !MIN_VERSION_base(4,6,0)
+        , testProperty "foldlStrict" (foldlStrictProp p)
 #endif
+        ]
+
+
+
+--------------------------------------------------------------------------------
+-- Display
+--------------------------------------------------------------------------------
+
+endsInNewlineProp :: (a -> String) -> a -> Property
+endsInNewlineProp f x =
+    maybe (counterexample "shouldn't be empty" False) ('\n' ===) (last' (f x))
+  where
+    last' =
+        foldl'
+            (\_ e ->
+                  Just e)
+            Nothing
+
+--------------------------------------------------------------------------------
+-- Helper for Checker format
+--------------------------------------------------------------------------------
 
 testBatch :: TestBatch -> Framework.Test
 testBatch (name, tests) = testGroup name (map (uncurry testProperty) tests)
@@ -178,20 +244,9 @@ main =
         [ testBatch (monoid (Preorder.Leaf :: Preorder.Tree A))
         , testProperty "toList . fromList" (inverseL toList (Preorder.fromList :: [Int] -> Preorder.Tree Int))
 #if MIN_VERSION_base(4,9,0)
-        , testBatch (ord (\x -> oneof [pure x, arbitrary :: Gen (Lifted Preorder.Tree OrdA)]))
-        , testProperty "eq1" (eq1Prop Preorder.Leaf)
-        , testProperty "ord1" (ord1Prop Preorder.Leaf)
-        , testProperty "show1" (showProp Preorder.Leaf)
-        , testProperty "read1" (readProp Preorder.Leaf)
+        , liftedProperties (const Preorder.Leaf)
 #endif
-        , testProperty "foldl" (foldlProp Preorder.Leaf)
-        , testProperty "foldl'" (foldlProp' Preorder.Leaf)
-        , testProperty "foldr'" (foldrProp' Preorder.Leaf)
-        , testProperty "foldMap" (foldMapProp Preorder.Leaf)
-        , testProperty "foldrStrict" (foldrStrictProp Preorder.Leaf)
-#if MIN_VERSION_base(4,8,0) || !MIN_VERSION_base(4,6,0)
-        , testProperty "foldlStrict" (foldlStrictProp Preorder.Leaf)
-#endif
+        , foldProperties Preorder.Leaf
         , testBatch (functor (undefined :: Preorder.Tree (A, B, C)))
         , testBatch
             ( "applicative"
@@ -201,26 +256,16 @@ main =
               ])
         , testBatch (traversable (undefined :: Preorder.Tree (A, B, [Int])))
         , testBatch (alternative (undefined :: Preorder.Tree A))
+        , testProperty "drawTree ends in newline" (endsInNewlineProp (Preorder.drawTree :: Preorder.Tree A -> String))
         ]
     , testGroup
         "Inorder"
         [ testBatch (monoid (Inorder.Leaf :: Inorder.Tree A))
         , testProperty "toList . fromList" (inverseL toList (Inorder.fromList :: [Int] -> Inorder.Tree Int))
 #if MIN_VERSION_base(4,9,0)
-        , testBatch (ord (\x -> oneof [pure x, arbitrary :: Gen (Lifted Inorder.Tree OrdA)]))
-        , testProperty "eq1" (eq1Prop Inorder.Leaf)
-        , testProperty "ord1" (ord1Prop Inorder.Leaf)
-        , testProperty "show1" (showProp Inorder.Leaf)
-        , testProperty "read1" (readProp Inorder.Leaf)
+        , liftedProperties (const Inorder.Leaf)
 #endif
-        , testProperty "foldl" (foldlProp Inorder.Leaf)
-        , testProperty "foldl'" (foldlProp' Inorder.Leaf)
-        , testProperty "foldr'" (foldrProp' Inorder.Leaf)
-        , testProperty "foldMap" (foldMapProp Inorder.Leaf)
-        , testProperty "foldrStrict" (foldrStrictProp Inorder.Leaf)
-#if MIN_VERSION_base(4,8,0) || !MIN_VERSION_base(4,6,0)
-        , testProperty "foldlStrict" (foldlStrictProp Preorder.Leaf)
-#endif
+        , foldProperties Inorder.Leaf
         , testBatch
             ( "applicative"
             , [ (name, test)
@@ -230,35 +275,26 @@ main =
         , testBatch (functor (undefined :: Inorder.Tree (A, B, C)))
         , testBatch (traversable (undefined :: Inorder.Tree (A, B, [Int])))
         , testBatch (alternative (undefined :: Inorder.Tree A))
+        , testProperty "drawTree ends in newline" (endsInNewlineProp (Inorder.drawTree :: Inorder.Tree A -> String))
         ]
     , testGroup
         "Leafy"
-        [ 
+        [
 #if MIN_VERSION_base(4,9,0)
         testProperty "semigroup" (isAssoc ((Semigroup.<>) :: Leafy.Tree Int -> Leafy.Tree Int -> Leafy.Tree Int) ) ,
 #endif
          testProperty "toList . fromList" (inverseL (NonEmpty . toList) (Leafy.fromList . getNonEmpty :: NonEmptyList Int -> Leafy.Tree Int))
 #if MIN_VERSION_base(4,9,0)
-        , testBatch (ord (\x -> oneof [pure x, arbitrary :: Gen (Lifted Leafy.Tree OrdA)]))
-        , testProperty "eq1" (eq1Prop (Leafy.Leaf undefined))
-        , testProperty "ord1" (ord1Prop (Leafy.Leaf undefined))
-        , testProperty "show1" (showProp (Leafy.Leaf ()))
-        , testProperty "read1" (readProp (Leafy.Leaf undefined))
+        , liftedProperties Leafy.Leaf
 #endif
-        , testProperty "foldl" (foldlProp             (Leafy.Leaf undefined))
-        , testProperty "foldl'" (foldlProp'             (Leafy.Leaf undefined))
-        , testProperty "foldr" (foldrProp'            (Leafy.Leaf undefined))
-        , testProperty "foldMap" (foldMapProp         (Leafy.Leaf undefined))
-        , testProperty "foldrStrict" (foldrStrictProp (Leafy.Leaf undefined))
-#if MIN_VERSION_base(4,8,0) || !MIN_VERSION_base(4,6,0)
-        , testProperty "foldlStrict" (foldlStrictProp (Leafy.Leaf undefined))
-#endif
+        , foldProperties (Leafy.Leaf undefined)
         , testBatch (functor (undefined :: Leafy.Tree (A, B, C)))
         , testBatch (applicative (undefined :: Leafy.Tree (A, B, C)))
         , testBatch (monad (undefined :: Leafy.Tree (A, B, C)))
         , testBatch (monadFunctor (undefined :: Leafy.Tree (A, B)))
         , testBatch (monadApplicative (undefined :: Leafy.Tree (A, B)))
         , testBatch (traversable (undefined :: Leafy.Tree (A, B, [Int])))
+        , testProperty "drawTree ends in newline" (endsInNewlineProp (Leafy.drawTree :: Leafy.Tree A -> String))
         ]
     ]
 

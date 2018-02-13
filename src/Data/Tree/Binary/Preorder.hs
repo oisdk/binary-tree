@@ -1,18 +1,18 @@
-{-# LANGUAGE CPP #-}
+{-# LANGUAGE CPP                #-}
 
-{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE BangPatterns       #-}
 #if __GLASGOW_HASKELL__
 {-# LANGUAGE DeriveDataTypeable #-}
 #endif
 #if __GLASGOW_HASKELL__ >= 702
-{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveGeneric      #-}
 #endif
 #if __GLASGOW_HASKELL__ >= 703
-{-# LANGUAGE Safe #-}
+{-# LANGUAGE Safe               #-}
 #endif
 
 
--- | 
+-- |
 -- Module      : Data.Tree.Binary.Preorder
 -- Description : A simple, generic, preorder binary tree.
 -- Copyright   : (c) Donnacha Oisín Kidney, 2018
@@ -46,57 +46,55 @@ module Data.Tree.Binary.Preorder
   , printTree
   ) where
 
-import Prelude hiding
-  ( replicate
-#if MIN_VERSION_base(4,8,0)
-  ,Functor(..),Foldable(..),Applicative(..), (<$>), foldMap, Monoid
-#else
-  ,foldr,foldl
-#endif
-  )
+import           Prelude                   hiding (Applicative (..),
+                                            Foldable (..), Functor (..), Monoid,
+                                            foldMap, foldl, foldr, replicate,
+                                            (<$>))
 
-import Data.List (length)
+import           Data.List                 (length)
 
-import Control.Applicative (Applicative(..), Alternative, liftA2, liftA3)
-import qualified Control.Applicative as Alternative ((<|>), empty)
+import           Control.Applicative       (Alternative, Applicative (..),
+                                            liftA2, liftA3)
+import qualified Control.Applicative       as Alternative (empty, (<|>))
 
-import Control.DeepSeq (NFData(rnf))
+import           Control.DeepSeq           (NFData (rnf))
 
-import Data.Monoid (Monoid(mappend, mempty))
-import Data.Functor (Functor(fmap, (<$)))
+import           Data.Functor              (Functor (fmap, (<$)))
+import           Data.Monoid               (Monoid (mappend, mempty))
 
 #if MIN_VERSION_base(4,6,0)
-import Data.Foldable (Foldable(foldl, foldr, foldMap, foldl', foldr'))
+import           Data.Foldable             (Foldable (foldMap, foldl, foldl', foldr, foldr'))
 #else
-import Data.Foldable (Foldable(foldl, foldr, foldMap))
+import           Data.Foldable             (Foldable (foldMap, foldl, foldr))
 #endif
 
 #if MIN_VERSION_base(4,9,0)
-import Data.Functor.Classes
-import qualified Data.Semigroup as Semigroup
+import           Data.Functor.Classes
+import qualified Data.Semigroup            as Semigroup
 #endif
 
-import Data.Traversable (Traversable(traverse))
+import           Data.Traversable          (Traversable (traverse))
 
-import Data.Typeable (Typeable)
+import           Data.Typeable             (Typeable)
 
 #if __GLASGOW_HASKELL__ >= 706
-import GHC.Generics (Generic, Generic1)
+import           GHC.Generics              (Generic, Generic1)
 #elif __GLASGOW_HASKELL__ >= 702
-import GHC.Generics (Generic)
+import           GHC.Generics              (Generic)
 #endif
 
-import Text.Read
+import           Text.Read
 
 #if __GLASGOW_HASKELL__
-import Data.Data (Data)
+import           Data.Data                 (Data)
 #if MIN_VERSION_base(4,10,0)
-import Text.Read.Lex (expect)
+import           Text.Read.Lex             (expect)
 #endif
 #endif
 
+import           Data.Tree.Binary.Internal (Identity (..), State (..),
+                                            evalState)
 import qualified Data.Tree.Binary.Internal as Internal
-import Data.Tree.Binary.Internal (State(..), evalState, Identity(..))
 
 -- | A preorder binary tree.
 data Tree a
@@ -115,13 +113,13 @@ data Tree a
   )
 
 instance Functor Tree where
-  fmap _ Leaf = Leaf
+  fmap _ Leaf         = Leaf
   fmap f (Node x l r) = Node (f x) (fmap f l) (fmap f r)
 #if __GLASGOW_HASKELL__
   {-# INLINABLE fmap #-}
 #endif
   x <$ xs = go xs where
-    go Leaf = Leaf
+    go Leaf         = Leaf
     go (Node _ l r) = Node x (go l) (go r)
   {-# INLINE (<$) #-}
 
@@ -136,8 +134,8 @@ instance Applicative Tree where
 #endif
 #if MIN_VERSION_base(4,10,0)
   liftA2 f = go where
-    go Leaf _ = Leaf
-    go (Node _ _ _) Leaf = Leaf
+    go Leaf _                        = Leaf
+    go (Node _ _ _) Leaf             = Leaf
     go (Node x xl xr) (Node y yl yr) = Node (f x y) (go xl yl) (go xr yr)
   {-# INLINE liftA2 #-}
 #endif
@@ -165,13 +163,13 @@ instance Alternative Tree where
   {-# INLINE (<|>) #-}
 
 instance Foldable Tree where
-  foldr _ b Leaf = b
+  foldr _ b Leaf         = b
   foldr f b (Node x l r) = f x (foldr f (foldr f b r) l)
 
-  foldl _ b Leaf = b
+  foldl _ b Leaf         = b
   foldl f b (Node x l r) = foldl f (foldl f (f b x) l) r
 
-  foldMap _ Leaf = mempty
+  foldMap _ Leaf         = mempty
   foldMap f (Node x l r) = f x `mappend` foldMap f l `mappend` foldMap f r
 
 #if __GLASGOW_HASKELL__
@@ -198,7 +196,7 @@ instance Foldable Tree where
 #endif
 
 instance Traversable Tree where
-  traverse _ Leaf = pure Leaf
+  traverse _ Leaf         = pure Leaf
   traverse f (Node x l r) = liftA3 Node (f x) (traverse f l) (traverse f r)
 #if __GLASGOW_HASKELL__
   {-# INLINABLE traverse #-}
@@ -215,7 +213,7 @@ empty = Leaf
 
 {-# INLINE empty #-}
 instance NFData a => NFData (Tree a) where
-  rnf Leaf = ()
+  rnf Leaf         = ()
   rnf (Node x l r) = rnf x `seq` rnf l `seq` rnf r
 
 #if MIN_VERSION_base(4,9,0)
@@ -277,7 +275,7 @@ instance Read1 Tree where
 foldTree :: b -> (a -> b -> b -> b) -> Tree a -> b
 foldTree b f = go
   where
-    go Leaf = b
+    go Leaf         = b
     go (Node x l r) = f x (go l) (go r)
 {-# INLINE foldTree #-}
 
@@ -365,7 +363,7 @@ instance Monoid (Tree a) where
   mappend = (Semigroup.<>)
   {-# INLINE mappend #-}
 #else
-  mappend Leaf y = y
+  mappend Leaf y         = y
   mappend (Node x l r) y = Node x l (mappend r y)
 #if __GLASGOW_HASKELL__
   {-# INLINABLE mappend #-}
@@ -384,7 +382,7 @@ fromList xs = evalState (replicateA n u) xs
       State
         (\ys ->
            case ys of
-             [] -> 
+             [] ->
 #if __GLASGOW_HASKELL__ >= 800
                errorWithoutStackTrace
 #else
@@ -420,7 +418,7 @@ drawTree t = drawTreeWith show t ""
 -- >>> putStr (drawTreeWith id (singleton "abc") "")
 -- abc
 --
--- >>> putStr (drawTreeWith id (Node "abc" (singleton  "d") Leaf) "") 
+-- >>> putStr (drawTreeWith id (Node "abc" (singleton  "d") Leaf) "")
 --    ┌d
 -- abc┘
 --
@@ -432,7 +430,7 @@ drawTree t = drawTreeWith show t ""
 drawTreeWith :: (a -> String) -> Tree a -> ShowS
 drawTreeWith sf = Internal.drawTree sf uncons'
   where
-    uncons' Leaf = Nothing
+    uncons' Leaf         = Nothing
     uncons' (Node x l r) = Just (x, l, r)
 
 -- | Pretty-print a tree.
