@@ -51,12 +51,12 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - binary-tree
-    - QuickCheck >= 2.7.1
-    - checkers
-    - ChasingBottoms
-    - HUnit
-    - test-framework
-    - test-framework-quickcheck2
+    - QuickCheck >= 1.0
+    - checkers >= 0.1
+    - ChasingBottoms >= 1.2.2
+    - HUnit >=1.1
+    - test-framework >=0.1
+    - test-framework-quickcheck2 >=0.2.1
   doctests:
     main:                doctests.hs
     source-dirs:         doctest
@@ -64,8 +64,8 @@ tests:
     - -threaded
     dependencies:
     - binary-tree
-    - doctest
-    - QuickCheck >= 2.7.1
+    - doctest >=0.3.0
+    - QuickCheck >= 1.0
 
 benchmarks:
   bench:
@@ -78,5 +78,5 @@ benchmarks:
     - -O2
     dependencies:
     - binary-tree
-    - criterion
-    - random
+    - criterion >=0.1
+    - random >=1.0.0.0

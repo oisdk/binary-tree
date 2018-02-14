@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 2148f3fe33f88301bbdefa9d7dab377a1e7cb8a992e53c85ce8b671ca3b5a3f7
+-- hash: a3b5e36c787d0bbc68253ec588dc76870165b6a14b277df261519294744cb379
 
 name:           binary-tree
 version:        0.1.0.0
@@ -53,14 +53,14 @@ test-suite binary-tree-test
       test
   ghc-options: -Wall -fwarn-incomplete-record-updates -fwarn-incomplete-uni-patterns -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      ChasingBottoms
-    , HUnit
-    , QuickCheck >=2.7.1
+      ChasingBottoms >=1.2.2
+    , HUnit >=1.1
+    , QuickCheck >=1.0
     , base >=4.0 && <5
     , binary-tree
-    , checkers
-    , test-framework
-    , test-framework-quickcheck2
+    , checkers >=0.1
+    , test-framework >=0.1
+    , test-framework-quickcheck2 >=0.2.1
   if impl(ghc >= 8.0)
     ghc-options: -fwarn-redundant-constraints -Wcompat
   other-modules:
@@ -74,10 +74,10 @@ test-suite doctests
       doctest
   ghc-options: -Wall -fwarn-incomplete-record-updates -fwarn-incomplete-uni-patterns -threaded
   build-depends:
-      QuickCheck >=2.7.1
+      QuickCheck >=1.0
     , base >=4.0 && <5
     , binary-tree
-    , doctest
+    , doctest >=0.3.0
   if impl(ghc >= 8.0)
     ghc-options: -fwarn-redundant-constraints -Wcompat
   other-modules:
@@ -93,8 +93,8 @@ benchmark bench
   build-depends:
       base >=4.0 && <5
     , binary-tree
-    , criterion
-    , random
+    , criterion >=0.1
+    , random >=1.0.0.0
   if impl(ghc >= 8.0)
     ghc-options: -fwarn-redundant-constraints -Wcompat
   other-modules:
