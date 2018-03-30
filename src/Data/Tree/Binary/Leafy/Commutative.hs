@@ -15,6 +15,18 @@
 {-# LANGUAGE PatternSynonyms #-}
 #endif
 
+-- |
+-- Module      : Data.Tree.Binary.Leafy.Commutative
+-- Description : A leafy binary tree with commutative constructors.
+-- Copyright   : (c) Donnacha Oisín Kidney, 2018
+-- License     : MIT
+-- Maintainer  : mail@doisinkidney.com
+-- Stability   : experimental
+-- Portability : portable
+--
+-- This module provides a leafy binary tree with commutative
+-- constructors. It's a "free" construction in some sense for
+-- any commutative, non-associative, binary operator.
 module Data.Tree.Binary.Leafy.Commutative
   (Tree(Leaf)
 #if __GLASGOW_HASKELL__ >= 800
@@ -82,7 +94,8 @@ data Tree a
 #if __GLASGOW_HASKELL__ >= 800
 
 infixl 5 :&:
--- |
+-- | A constructor (and pattern) for the tree, which is commutative.
+--
 -- prop> xs :&: ys === ys :&: xs
 pattern (:&:) :: Ord a => Tree a -> Tree a -> Tree a
 pattern xs :&: ys <- Branch xs ys
@@ -92,14 +105,17 @@ pattern xs :&: ys <- Branch xs ys
 {-# COMPLETE Leaf, (:&:) #-}
 
 infixl 5 :*:
--- | An unconstrained unidirectional pattern synonym.
+-- | A pattern for the tree, which doesn't carry an 'Ord' constraint.
+-- Ideally, matching on the ':&:' pattern wouldn't require an 'Ord'
+-- constraint, but that's not currently possible with pattern synonyms.
 pattern (:*:) :: Tree a -> Tree a -> Tree a
 pattern xs :*: ys <- Branch xs ys
 {-# COMPLETE Leaf, (:*:) #-}
 #endif
 
 infixl 5 &:
--- |
+-- | A commutative constructor for the tree.
+--
 -- prop> xs &: ys === ys &: xs
 (&:) :: Ord a => Tree a -> Tree a -> Tree a
 xs &: ys | xs <= ys = Branch xs ys
@@ -211,8 +227,8 @@ instance Show1 Tree where
 --           where
 --             sub = go (n `div` 2)
 --     shrink (Leaf x) = fmap Leaf (shrink x)
---     shrink (l :&: r) =
+--     shrink (Branch l r) =
 --         l : r :
---         [ l' :&: r'
+--         [ l' &: r'
 --         | (l',r') <- shrink (l, r) ]
 -- :}
