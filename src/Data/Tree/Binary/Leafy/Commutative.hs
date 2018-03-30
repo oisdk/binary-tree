@@ -21,9 +21,8 @@ module Data.Tree.Binary.Leafy.Commutative
 #if __GLASGOW_HASKELL__ >= 800
   ,pattern (:&:)
   ,pattern (:*:)
-#else
-  , (&:)
 #endif
+  , (&:)
   ,unconsTree)
   where
 
@@ -116,6 +115,10 @@ instance Ord a => Semigroup.Semigroup (Tree a) where
 #endif
 #endif
 
+-- | Uncons a tree.
+--
+-- prop> unconsTree (Leaf x) === Left x
+-- prop> xs <= ys ==> unconsTree (xs &: ys) === Right (xs,ys)
 unconsTree :: Tree a -> Either a (Tree a, Tree a)
 unconsTree (Leaf x) = Left x
 unconsTree (Branch xs ys) = Right (xs,ys)
