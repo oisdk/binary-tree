@@ -38,6 +38,8 @@ import Prelude hiding
 
 import Control.DeepSeq (NFData(rnf))
 
+import Data.Monoid (mappend)
+
 #if MIN_VERSION_base(4,8,0)
 import Data.Foldable (Foldable(foldl, foldr, foldMap, foldl', foldr', null))
 #elif MIN_VERSION_base(4,6,0)
@@ -80,7 +82,10 @@ data Tree a
   )
 
 #if __GLASGOW_HASKELL__ >= 800
+
 infixl 5 :&:
+-- |
+-- prop> xs :&: ys === ys :&: xs
 pattern (:&:) :: Ord a => Tree a -> Tree a -> Tree a
 pattern xs :&: ys <- Branch xs ys
   where xs :&: ys
@@ -89,12 +94,15 @@ pattern xs :&: ys <- Branch xs ys
 {-# COMPLETE Leaf, (:&:) #-}
 
 infixl 5 :*:
+-- | An unconstrained unidirectional pattern synonym.
 pattern (:*:) :: Tree a -> Tree a -> Tree a
 pattern xs :*: ys <- Branch xs ys
 {-# COMPLETE Leaf, (:*:) #-}
 #endif
 
 infixl 5 &:
+-- |
+-- prop> xs &: ys === ys &: xs
 (&:) :: Ord a => Tree a -> Tree a -> Tree a
 xs &: ys | xs <= ys = Branch xs ys
          | otherwise = Branch ys xs

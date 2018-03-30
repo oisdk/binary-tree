@@ -210,7 +210,7 @@ instance MonadZip Tree where
       go (Leaf x) (Leaf y) = Leaf (f x y)
       go (xl :*: xr) (yl :*: yr) = go xl yl :*: go xr yr
       go (Leaf x) (yl :*: yr) = fmap (f x) yl :*: fmap (f x) yr
-      go (xl :*: xr) (Leaf y) = fmap (flip f y) xl :*: fmap (flip f y) xr
+      go (xl :*: xr) (Leaf y) = fmap (`f` y) xl :*: fmap (`f` y) xr
   munzip (Leaf (x, y)) = (Leaf x, Leaf y)
   munzip (xs :*: ys) = (xl :*: yl, xr :*: yr)
     where
