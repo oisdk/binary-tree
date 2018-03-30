@@ -92,17 +92,17 @@ infixl 5 :*:
 pattern (:*:) :: Tree a -> Tree a -> Tree a
 pattern xs :*: ys <- Branch xs ys
 {-# COMPLETE Leaf, (:*:) #-}
-#else
+#endif
+
 infixl 5 &:
 (&:) :: Ord a => Tree a -> Tree a -> Tree a
 xs &: ys | xs <= ys = Branch xs ys
          | otherwise = Branch ys xs
-#endif
 
 #if MIN_VERSION_base(4,9,0)
 instance Ord a => Semigroup.Semigroup (Tree a) where
-  xs@(Leaf _) <> ys = xs :&: ys
-  (Branch xl xr) <> ys = xl :&: (xr Semigroup.<> ys)
+  xs@(Leaf _) <> ys = xs &: ys
+  (Branch xl xr) <> ys = xl &: (xr Semigroup.<> ys)
 #if __GLASGOW_HASKELL__
   {-# INLINABLE (<>) #-}
 #endif
@@ -165,15 +165,15 @@ instance NFData a => NFData (Tree a) where
 #if MIN_VERSION_base(4,9,0)
 instance Eq1 Tree where
   liftEq eq (Leaf x) (Leaf y) = eq x y
-  liftEq eq (xl :*: xr) (yl :*: yr) = liftEq eq xl yl && liftEq eq xr yr
+  liftEq eq (Branch xl xr) (Branch yl yr) = liftEq eq xl yl && liftEq eq xr yr
   liftEq _ _ _ = False
 
 instance Ord1 Tree where
   liftCompare cmp (Leaf x) (Leaf y) = cmp x y
-  liftCompare cmp (xl :*: xr) (yl :*: yr) =
+  liftCompare cmp (Branch xl xr) (Branch yl yr) =
     liftCompare cmp xl yl `mappend` liftCompare cmp xr yr
-  liftCompare _ (Leaf _) (_ :*: _) = LT
-  liftCompare _ (_ :*: _) (Leaf _) = GT
+  liftCompare _ (Leaf _) (Branch _ _) = LT
+  liftCompare _ (Branch _  _) (Leaf _) = GT
 
 instance Show1 Tree where
     liftShowsPrec s _ = go
@@ -197,7 +197,7 @@ instance Show1 Tree where
 --       where
 --         go n
 --           | n <= 0 = fmap Leaf arbitrary
---           | otherwise = oneof [fmap Leaf arbitrary, liftA2 (:&:) sub sub]
+--           | otherwise = oneof [fmap Leaf arbitrary, liftA2 (&:) sub sub]
 --           where
 --             sub = go (n `div` 2)
 --     shrink (Leaf x) = fmap Leaf (shrink x)
